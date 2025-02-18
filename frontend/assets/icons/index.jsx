@@ -61,3 +61,4 @@ const Icon = ({name, ...props}) => {
 }
 
 export default Icon;
+
