@@ -1,5 +1,5 @@
 
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import React, {useRef, useState} from "react";
 import { StatusBar } from "expo-status-bar";
 import { hp, wp } from "../helpers/common" // Ensure wp is correctly defined
@@ -18,7 +18,10 @@ const Login = () => {
   const passwordRef = useRef("");
   const [loading, setLoading] = useState(false);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
+    if (!emailRef.current || !passwordRef.current){
+      Alert.alert('Login', "Please fill all the fields!");
+    }
 
   }
   return (
@@ -61,7 +64,7 @@ const Login = () => {
                 <Text style={styles.footerText}>
                 Don't have an account yet?
                 </Text>
-                <Pressable>
+                <Pressable onPress={() => router.push('signUp')}>
                   <Text style={[styles. footerText,{color:'#397454', fontWeight:'bold'}]}>Sign Up Now</Text>
                 </Pressable>
               </View>
