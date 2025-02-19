@@ -12,6 +12,8 @@ import { TextInput } from "react-native-gesture-handler"
 import Input from "../components/Input"
 import BackButton from "../components/BackButton"
 import Icon from "../assets/icons"
+
+const isValidEmail = (emailRef) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(emailRef);
 const SignUp = () => {
   const router = useRouter();
   const emailRef = useRef("");
@@ -19,9 +21,18 @@ const SignUp = () => {
   const nameRef = useRef("");
   const [loading, setLoading] = useState(false);
 
+  
   const onSubmit = async () => {
-    if (!emailRef.current || !passwordRef.current){
+    if (!emailRef.current || !passwordRef.current || !nameRef.current){
       Alert.alert('Login', "Please fill all the fields!");
+    }
+
+    if(!isValidEmail(emailRef.current)){
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+    }
+
+    if(passwordRef.current.length <6){
+      Alert.alert("Weak Password", "Password must be at least 6 characters long.");
     }
 
   }
