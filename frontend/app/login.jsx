@@ -1,6 +1,6 @@
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import React from "react";
+import React, {useRef, useState} from "react";
 import { StatusBar } from "expo-status-bar";
 import { hp, wp } from "../helpers/common" // Ensure wp is correctly defined
 import { Image } from "react-native"
@@ -11,9 +11,16 @@ import ScreenWrapper  from '../components/ScreenWrapper'
 import { TextInput } from "react-native-gesture-handler"
 import Input from "../components/Input"
 import BackButton from "../components/BackButton"
-import Icon from "../assets/icons/index"
+import Icon from "../assets/icons"
 const Login = () => {
   const router = useRouter();
+  const emailRef = useRef("");
+  const passwordRef = useRef("");
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = () => {
+
+  }
   return (
 
     <ScreenWrapper bg= "white">
@@ -31,7 +38,34 @@ const Login = () => {
               <Text style={{fontSize: hp(1.5), color: "black"}}>
                 Please login
               </Text>
-              <Input />
+              <Input
+              icon= {<Icon name="mail" size={26} strokeWidth={1.6} />}
+              placeholder="Enter your email address"
+              onChangeText={value=> emailRef.current = value}
+              />
+              
+              <Input
+              icon= {<Icon name="lock" size={26} strokeWidth={1.6} />}
+              placeholder="Enter your password"
+              secureTextEntry
+              onChangeText={value=> passwordRef.current = value}
+              />
+
+              <Text style={[styles.forgotPassword, {fontWeight: "bold", color: "#397454"}]}>
+                Forgot Password?
+              </Text>
+
+              <Button title="Login" loading={loading} onPress= {onSubmit}/>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>
+                Don't have an account yet?
+                </Text>
+                <Pressable>
+                  <Text style={[styles. footerText,{color:'#397454', fontWeight:'bold'}]}>Sign Up Now</Text>
+                </Pressable>
+              </View>
+
             </View>
 
             </View>
