@@ -32,20 +32,24 @@ const Forgot = () => {
     if (!emailRef.current || !nameRef.current) {
       Alert.alert('Login', "Please fill all the fields!");
     }
-    if (!isValidEmail(emailRef.current)) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.");
-    }
-    if (isValidEmail(emailRef.current) && nameRef.current) {
-        Alert.alert(
-            "Thank You!!",
-            "Please check your email",
-            [
-              {
-                text: "OK",
-                onPress: () => router.push('login'), // Navigate after pressing OK
-              },
-            ]
-          );
+    if (emailRef.current && nameRef.current) {
+        if (!isValidEmail(emailRef.current)) {
+            Alert.alert("Invalid Email", "Please enter a valid email address.");
+          }
+        if (isValidEmail(emailRef.current)) {
+            Alert.alert(
+                "Thank You!!",
+                "Please check your email",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => router.push('login'), // Navigate after pressing OK
+                  },
+                ]
+              );
+
+        }
+       
     }
   };
 
