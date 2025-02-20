@@ -13,6 +13,7 @@ import Input from "../components/Input"
 import BackButton from "../components/BackButton"
 import Icon from "../assets/icons"
 import logo from "../assets/images/logo.png"
+import { Picker } from '@react-native-picker/picker';
 const isValidEmail = (emailRef) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(emailRef);
 const SignUp = () => {
   const router = useRouter();
@@ -20,8 +21,9 @@ const SignUp = () => {
   const passwordRef = useRef("");
   const nameRef = useRef("");
   const fullnameRef = useRef("");
+  const roleRef= useRef("");
   const [loading, setLoading] = useState(false);
-
+  const [selectedRole, setSelectedRole] = useState("customer");
   
   const onSubmit = async () => {
     if (!emailRef.current || !passwordRef.current || !nameRef.current || !fullnameRef.current){
@@ -77,6 +79,23 @@ const SignUp = () => {
               secureTextEntry
               onChangeText={value=> passwordRef.current = value}
               />
+              <View style={styles.dropdownContainer}>
+              <Icon name="lock" size={26} strokeWidth={1.6} style={styles.dropdownIcon} />
+              <Picker
+                selectedValue={selectedRole}
+                style={styles.picker}
+                onValueChange={(itemValue) => {
+                  setSelectedRole(itemValue);
+                  roleRef.current = itemValue;
+                }}
+              >
+                <Picker.Item label="Select Role" value={null} />
+                <Picker.Item label="Customer" value="customer" />
+                <Picker.Item label="Vendor" value="vendor" />
+              </Picker>
+            </View>
+              
+
 
               <Button title="SignUp" loading={loading} onPress= {onSubmit}/>
 
