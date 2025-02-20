@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from database import users_collection
+from routes import user
 
-app = FastAPI()
+app = FastAPI(title="Vrikshya Rakshya API 🌿")
+
+app.include_router(user.router)
 
 @app.get("/")
 async def root():
-    user_count = users_collection.count_documents({})
-    return {"message": f"Hello! MongoDB connection successful. Users count: {user_count}"}
+    return {"message": "🌿 Welcome to Vrikshya Rakshya API"}
