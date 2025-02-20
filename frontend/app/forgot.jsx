@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -15,79 +16,68 @@ import logo from "../assets/images/logo.png";
 
 const isValidEmail = (emailRef) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(emailRef);
 
-const SignUp = () => {
+const Forgot = () => {
   const router = useRouter();
   const emailRef = useRef("");
-  const passwordRef = useRef("");
   const nameRef = useRef("");
-  const fullnameRef = useRef("");
-  const roleRef = useRef("");
   const [loading, setLoading] = useState(false);
   const [showMessage, setShowMessage] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowMessage(false), 3000);
+    const timer = setTimeout(() => setShowMessage(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
   const onSubmit = async () => {
-    if (!emailRef.current || !passwordRef.current || !nameRef.current || !fullnameRef.current) {
+    if (!emailRef.current || !nameRef.current) {
       Alert.alert('Login', "Please fill all the fields!");
     }
-
     if (!isValidEmail(emailRef.current)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
     }
 
-    if (passwordRef.current.length < 6) {
+    if (nameRef.current.length < 6) {
       Alert.alert("Weak Password", "Password must be at least 6 characters long.");
     }
   };
 
   return (
     <ScreenWrapper bg="white">
+      <StatusBar style="dark" />
       <View style={styles.container}>
+        <Image source={logo} style={styles.logo} resizeMode="contain" />
+        <View style={styles.headerContainer}>
         <View>
-          <Image source={logo} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.welcomeText}>Hey,</Text>
-          <Text style={styles.welcomeText}>Welcome to Vrikshya Rakshya</Text>
+          <Text style={styles.welcomeText}>Hey, forgot password?</Text>
+          <Text style={styles.welcomeText}>Don't worry</Text>
+        </View>
         </View>
 
         <View style={styles.form}>
           {showMessage && (
-            <Text style={{ fontSize: hp(1.5), color: "black" }}>
-              Please fill in the fields below to create a new account
+            <Text style={{ fontSize: hp(2), color: "#397454" }}>
+              Please fill the following fields:
             </Text>
           )}
           <Input
-            icon={<Icon name="user" size={26} strokeWidth={1.6} />}
-            placeholder="Enter your Full Name"
-            onChangeText={(value) => (fullnameRef.current = value)}
+            icon={<Icon name="mail" size={26} strokeWidth={1.6} />}
+            placeholder="Enter your email address"
+            onChangeText={(value) => (emailRef.current = value)}
           />
+
           <Input
             icon={<Icon name="user" size={26} strokeWidth={1.6} />}
             placeholder="Enter your username"
             onChangeText={(value) => (nameRef.current = value)}
           />
 
-          <Input
-            icon={<Icon name="mail" size={26} strokeWidth={1.6} />}
-            placeholder="Enter your email"
-            onChangeText={(value) => (emailRef.current = value)}
-          />
-          <Input
-            icon={<Icon name="lock" size={26} strokeWidth={1.6} />}
-            placeholder="Enter your password"
-            secureTextEntry
-            onChangeText={(value) => (passwordRef.current = value)}
-          />
 
-          <Button title="SignUp" loading={loading} onPress={onSubmit} />
+          <Button title="Submit" loading={loading} onPress={onSubmit} />
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already an account?</Text>
-            <Pressable onPress={() => router.push('login')}>
-              <Text style={[styles.footerText, { color: '#397454', fontWeight: 'bold' }]}>Login</Text>
+            <Text style={styles.footerText}>Don't have an account yet?</Text>
+            <Pressable onPress={() => router.push('signUp')}>
+              <Text style={[styles.footerText, { color: '#397454', fontWeight: 'bold' }]}>Sign Up Now</Text>
             </Pressable>
           </View>
         </View>
@@ -96,29 +86,37 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default Forgot;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: 30,
+    gap: 3,
     paddingHorizontal: wp(3),
-    paddingTop: 0,
-    marginTop: 0,
   },
   logo: {
     width: wp(10),
     height: hp(8),
     marginTop: -hp(8),
-    paddingTop: 0,
   },
   welcomeText: {
     fontSize: hp(3),
     fontWeight: "bold",
     color: '#397454',
   },
+  title: {
+    color: theme.colors.text,
+    fontSize: hp(2),
+    textAlign: "center",
+    fontWeight: "bold",
+  },
   form: {
     gap: 33,
+  },
+  forgotPassword: {
+    textAlign: "right",
+    fontWeight: "semibold",
+    color: theme.colors.text,
   },
   footer: {
     gap: 5,
