@@ -12,7 +12,7 @@ import { TextInput } from "react-native-gesture-handler"
 import Input from "../components/Input"
 import BackButton from "../components/BackButton"
 import Icon from "../assets/icons"
-
+import logo from "../assets/images/logo.png"
 const isValidEmail = (emailRef) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(emailRef);
 
 const Login = () => {
@@ -42,6 +42,8 @@ const Login = () => {
         <View style={styles.container}>
             {/* <BackButton router= {router}/> */}
             {/* <Icon name="delete"/> */}
+            <Image source={logo} style={styles.logo} resizeMode="contain" />
+
             <View>
               <Text style={styles.welcomeText}>Hey,</Text>
               <Text style={styles.welcomeText}>Welcome back to Vrikshya Rakshya</Text>
@@ -92,8 +94,13 @@ export default Login
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: 50,
+    gap: 3,
     paddingHorizontal: wp(3),
+  },
+  logo: {
+    width: wp(10),   
+    height: hp(8),  
+    marginTop: -hp(8),
   },
   welcomeText: {
     fontSize: hp(3),

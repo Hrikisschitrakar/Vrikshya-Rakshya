@@ -12,18 +12,19 @@ import { TextInput } from "react-native-gesture-handler"
 import Input from "../components/Input"
 import BackButton from "../components/BackButton"
 import Icon from "../assets/icons"
-
+import logo from "../assets/images/logo.png"
 const isValidEmail = (emailRef) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(emailRef);
 const SignUp = () => {
   const router = useRouter();
   const emailRef = useRef("");
   const passwordRef = useRef("");
   const nameRef = useRef("");
+  const fullnameRef = useRef("");
   const [loading, setLoading] = useState(false);
 
   
   const onSubmit = async () => {
-    if (!emailRef.current || !passwordRef.current || !nameRef.current){
+    if (!emailRef.current || !passwordRef.current || !nameRef.current || !fullnameRef.current){
       Alert.alert('Login', "Please fill all the fields!");
     }
 
@@ -38,12 +39,13 @@ const SignUp = () => {
   }
   return (
 
-    <ScreenWrapper bg= "white">
-      <StatusBar style= "dark"/>
+    <ScreenWrapper bg= "white" >
+      {/* <StatusBar style= "dark"/> */}
         <View style={styles.container}>
             {/* <BackButton router= {router}/> */}
             {/* <Icon name="delete"/> */}
             <View>
+            <Image source={logo} style={styles.logo} resizeMode="contain" />
               <Text style={styles.welcomeText}>Hey,</Text>
               <Text style={styles.welcomeText}>Welcome to Vrikshya Rakshya</Text>
 
@@ -53,6 +55,11 @@ const SignUp = () => {
               <Text style={{fontSize: hp(1.5), color: "black"}}>
                 Please fill in the fields below to create a new account
               </Text>
+              <Input
+              icon= {<Icon name="user" size={26} strokeWidth={1.6} />}
+              placeholder="Enter your Full Name"
+              onChangeText={value=> fullnameRef.current = value}
+              />
               <Input
               icon= {<Icon name="user" size={26} strokeWidth={1.6} />}
               placeholder="Enter your username"
@@ -94,8 +101,16 @@ export default SignUp
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: 50,
+    gap: 30,
     paddingHorizontal: wp(3),
+    paddingTop: 0,
+    marginTop: 0,
+  },
+  logo: {
+    width: wp(10),   // Adjust width as needed
+    height: hp(8),
+    marginTop: -hp(8),
+    paddingTop: 0,
   },
   welcomeText: {
     fontSize: hp(3),
