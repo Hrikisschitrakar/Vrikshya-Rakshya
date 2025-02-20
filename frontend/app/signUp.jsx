@@ -225,7 +225,7 @@ const SignUp = () => {
 
         <View style={styles.form}>
           {showMessage && (
-            <Text style={{ fontSize: hp(1.5), color: "black" }}>
+            <Text style={{ fontSize: hp(2), color: "#397454" }}>
               Please fill in the fields below to create a new account
             </Text>
           )}
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     color: "#397454",
   },
   form: {
-    gap: 33,
+    gap: 25,
   },
   footer: {
     gap: 5,

@@ -24,7 +24,7 @@ const Login = () => {
   const [showMessage, setShowMessage] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowMessage(false), 10000);
+    const timer = setTimeout(() => setShowMessage(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -49,7 +49,7 @@ const Login = () => {
         <Image source={logo} style={styles.logo} resizeMode="contain" />
         <View style={styles.headerContainer}>
         <View>
-          <Text style={styles.welcomeText}>Hey,</Text>
+          <Text style={styles.welcomeText_one}>Hey,</Text>
           <Text style={styles.welcomeText}>Welcome back to Vrikshya Rakshya</Text>
         </View>
         </View>
@@ -106,6 +106,12 @@ const styles = StyleSheet.create({
     marginTop: -hp(8),
   },
   welcomeText: {
+    fontSize: hp(3),
+    fontWeight: "bold",
+    color: '#397454',
+    paddingBottom: wp(5),
+  },
+  welcomeText_one:{
     fontSize: hp(3),
     fontWeight: "bold",
     color: '#397454',
