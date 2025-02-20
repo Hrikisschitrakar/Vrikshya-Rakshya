@@ -24,7 +24,7 @@ const Forgot = () => {
   const [showMessage, setShowMessage] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowMessage(false), 1000);
+    const timer = setTimeout(() => setShowMessage(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -35,9 +35,17 @@ const Forgot = () => {
     if (!isValidEmail(emailRef.current)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
     }
-
-    if (nameRef.current.length < 6) {
-      Alert.alert("Weak Password", "Password must be at least 6 characters long.");
+    if (isValidEmail(emailRef.current) && nameRef.current) {
+        Alert.alert(
+            "Thank You!!",
+            "Please check your email",
+            [
+              {
+                text: "OK",
+                onPress: () => router.push('login'), // Navigate after pressing OK
+              },
+            ]
+          );
     }
   };
 
