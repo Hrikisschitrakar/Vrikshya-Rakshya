@@ -185,6 +185,34 @@ const SignUp = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // const onSubmit = async () => {
+  //   if (
+  //     !emailRef.current ||
+  //     !passwordRef.current ||
+  //     !nameRef.current ||
+  //     !fullnameRef.current ||
+  //     !roleRef.current
+  //   ) {
+  //     Alert.alert("Login", "Please fill all the fields!");
+  //     return;
+  //   }
+
+  //   if (!isValidEmail(emailRef.current)) {
+  //     Alert.alert("Invalid Email", "Please enter a valid email address.");
+  //     return;
+  //   }
+
+  //   if (passwordRef.current.length < 6) {
+  //     Alert.alert("Weak Password", "Password must be at least 6 characters long.");
+  //     return;
+  //   }
+
+  //   if (!isValidRole(roleRef.current)) {
+  //     return;
+  //   }
+
+  //   Alert.alert("Success", "Account created successfully!");
+  // };
   const onSubmit = async () => {
     if (
       !emailRef.current ||
@@ -196,23 +224,53 @@ const SignUp = () => {
       Alert.alert("Login", "Please fill all the fields!");
       return;
     }
-
+  
     if (!isValidEmail(emailRef.current)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
-
+  
     if (passwordRef.current.length < 6) {
       Alert.alert("Weak Password", "Password must be at least 6 characters long.");
       return;
     }
-
+  
     if (!isValidRole(roleRef.current)) {
       return;
     }
-
-    Alert.alert("Success", "Account created successfully!");
+  
+    setLoading(true);
+  
+    try {
+      const response = await fetch("http://127.0.0.1:8000/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailRef.current,
+          username: nameRef.current,
+          full_name: fullnameRef.current,
+          role: roleRef.current.toLowerCase(),
+          password: passwordRef.current,
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        Alert.alert("Success", "Account created successfully!");
+        router.push("login");
+      } else {
+        Alert.alert("Error", data.detail || "Signup failed");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong!");
+    } finally {
+      setLoading(false);
+    }
   };
+  
 
   return (
     <ScreenWrapper bg="white">
