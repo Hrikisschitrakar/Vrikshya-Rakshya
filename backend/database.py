@@ -1,25 +1,15 @@
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-# Load environment variables from .env file
-load_dotenv()
+# PostgreSQL Database URL
+DATABASE_URL = "postgresql://postgres:hubby%40010@localhost:5432/vrikshya"
 
-# Get MongoDB URI and DB name from environment variables
-MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("MONGO_DB")
+# Create Engine
+engine = create_engine(DATABASE_URL)
 
-# Establish connection
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
+# Session Local
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Collections
-users_collection = db["users"]
-products_collection = db["products"]
-orders_collection = db["orders"]
-notifications_collection = db["notifications"]
-messages_collection = db["messages"]
-results_collection = db["results"]
-passkeys_collection = db["passkeys"]
-
-print(f"✅ Successfully connected to MongoDB database: {DB_NAME}")
+# Base Class
+Base = declarative_base()

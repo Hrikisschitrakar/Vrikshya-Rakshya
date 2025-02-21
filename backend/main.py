@@ -1,10 +1,11 @@
-from fastapi import FastAPI
-from routes import user
+from fastapi import FastAPI  # Ensure correct import
+from routers import product
 
-app = FastAPI(title="Vrikshya Rakshya API 🌿")
+app = FastAPI()
 
-app.include_router(user.router)
+# Include routers
+app.include_router(product.router)
 
 @app.get("/")
-async def root():
-    return {"message": "🌿 Welcome to Vrikshya Rakshya API"}
+def home():
+    return {"message": "Welcome to Vrikshya API"}
