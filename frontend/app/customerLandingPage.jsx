@@ -5,7 +5,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import Button from "../components/Button";
 import logo from "../assets/images/logo.png";
 import pesticides from "../assets/images/pesticides.png";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 
 const MarketplaceScreen = () => <Text style={styles.screenText}>Marketplace</Text>;
 const NotificationScreen = () => <Text style={styles.screenText}>Notifications</Text>;
@@ -14,6 +14,7 @@ const ProfileScreen = () => <Text style={styles.screenText}>Profile</Text>;
 const Tab = createBottomTabNavigator();
 
 const HomeScreen = () => {
+  const router = useRouter();
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerContainer}>
@@ -27,7 +28,7 @@ const HomeScreen = () => {
       <View style={styles.diagnoseContainer}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Diagnose Plant Disease</Text>
-          <Button title="Upload Image" style={[styles.uploadButton]} onPress={() => alert("Upload Image")} />
+          <Button title="Upload Image" style={[styles.borderButton]} onPress={() => alert("Upload Image")} />
         </View>
         <Image source={logo} style={styles.sectionImage} resizeMode="contain" />
         <Text style={styles.sectionSubText}>With a camera icon</Text>
@@ -36,7 +37,7 @@ const HomeScreen = () => {
       <View style={styles.marketplaceContainer}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Vendor Marketplace</Text>
-          <Button title="Shop Now" style={[styles.shopButton]} onPress={() => router.push("marketPlace")} />
+          <Button title="Shop Now" style={[styles.borderButton]} onPress={() => router.push("marketPlace")} />
         </View>
         <Image source={pesticides} style={styles.sectionImage} resizeMode="contain" />
         <Text style={styles.sectionSubText}>Find pesticides and plant essentials</Text>
@@ -46,17 +47,18 @@ const HomeScreen = () => {
 };
 
 const CustomerLandingPage = () => {
+  const router = useRouter();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === "Home") iconName = "home";
-          else if (route.name === "Marketplace") iconName = "cart";
+          else if (route.name === "MarketPlace") iconName = "cart";
           else if (route.name === "Notifications") iconName = "notifications";
           else if (route.name === "Profile") iconName = "person";
 
-          return <Icon name={iconName} size={size} color={color} />;
+          return <Icon name={iconName} size={size} color={color} onPress={() => route.name === "MarketPlace" && router.push("marketPlace")} />;
         },
         tabBarActiveTintColor: "#397454",
         tabBarInactiveTintColor: "gray",
@@ -64,7 +66,7 @@ const CustomerLandingPage = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Marketplace" component={MarketplaceScreen} />
+      <Tab.Screen name="MarketPlace" component={MarketplaceScreen} />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
@@ -126,16 +128,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 10,
   },
-  uploadButton: {
-    backgroundColor: "white",
+  borderButton: {
+    borderWidth: 2,
+    borderColor: "#397454",
     paddingHorizontal: 20,
     paddingVertical: 8,
-  },
-  shopButton: {
-    backgroundColor: "white",
-    borderColor: "green",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    backgroundColor: "transparent",
+    fontSize: 12,
   },
   sectionImage: {
     width: 100,
