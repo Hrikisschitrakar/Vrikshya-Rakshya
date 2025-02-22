@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image, ScrollView } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/Ionicons";
 import Button from "../components/Button";
 import logo from "../assets/images/logo.png";
 import pesticides from "../assets/images/pesticides.png";
+import { router } from "expo-router";
 
 const MarketplaceScreen = () => <Text style={styles.screenText}>Marketplace</Text>;
 const NotificationScreen = () => <Text style={styles.screenText}>Notifications</Text>;
@@ -14,7 +15,7 @@ const Tab = createBottomTabNavigator();
 
 const HomeScreen = () => {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.headerContainer}>
         <Image source={logo} style={styles.logo} resizeMode="contain" />
         <View>
@@ -22,21 +23,25 @@ const HomeScreen = () => {
           <Text style={styles.subText}>Explore the beauty of greenery with Vrikshya Rakshya</Text>
         </View>
       </View>
-      <Button title="Get Started" style={styles.getStartedButton} onPress={() => alert("Get Started")} />
+      <Button title="Get Started" style={[styles.getStartedButton, styles.fullWidthButton]} onPress={() => alert("Get Started")} />
       <View style={styles.diagnoseContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Diagnose Plant Disease</Text>
+          <Button title="Upload Image" style={[styles.uploadButton]} onPress={() => alert("Upload Image")} />
+        </View>
         <Image source={logo} style={styles.sectionImage} resizeMode="contain" />
-        <Text style={styles.sectionTitle}>Diagnose Plant Disease</Text>
         <Text style={styles.sectionSubText}>With a camera icon</Text>
         <Text style={styles.uploadText}>Upload a Leaf Image</Text>
-        <Button title="Upload Image" style={styles.uploadButton} onPress={() => alert("Upload Image")} />
       </View>
       <View style={styles.marketplaceContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Vendor Marketplace</Text>
+          <Button title="Shop Now" style={[styles.shopButton]} onPress={() => router.push("marketPlace")} />
+        </View>
         <Image source={pesticides} style={styles.sectionImage} resizeMode="contain" />
-        <Text style={styles.sectionTitle}>Vendor Marketplace</Text>
         <Text style={styles.sectionSubText}>Find pesticides and plant essentials</Text>
-        <Button title="Shop Now" style={styles.shopButton} onPress={() => alert("Go to Marketplace")} />
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -102,14 +107,12 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: "#F0F0F0",
     borderRadius: 10,
-    alignItems: "center",
   },
   marketplaceContainer: {
     marginTop: 20,
     padding: 15,
     backgroundColor: "#F0F0F0",
     borderRadius: 10,
-    alignItems: "center",
   },
   sectionTitle: {
     fontSize: 18,
@@ -124,12 +127,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   uploadButton: {
-    backgroundColor: "#397454",
-    marginTop: 10,
+    backgroundColor: "white",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
   shopButton: {
-    backgroundColor: "#397454",
-    marginTop: 10,
+    backgroundColor: "white",
+    borderColor: "green",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
   sectionImage: {
     width: 100,
@@ -141,5 +147,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     marginTop: 50,
+  },
+  fullWidthButton: {
+    width: "100%",
+    paddingVertical: 12,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
   },
 });

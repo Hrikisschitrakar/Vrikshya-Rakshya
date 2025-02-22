@@ -48,12 +48,16 @@ const Login = () => {
   return (
     <ScreenWrapper bg="white">
       <StatusBar style="dark" />
+
+
       <View style={styles.container}>
-        <Image source={logo} style={styles.logo} resizeMode="contain" />
+        
+        
         <View style={styles.headerContainer}>
+        <Image source={logo} style={styles.logo} resizeMode="contain" />
         <View>
-          <Text style={styles.welcomeText_one}>Hey,</Text>
-          <Text style={styles.welcomeText}>Welcome back to Vrikshya Rakshya</Text>
+          <Text style={styles.welcomeText_one}>Hey, Welcome back to</Text>
+          <Text style={styles.welcomeText}>Vrikshya Rakshya</Text>
         </View>
         </View>
 
@@ -118,6 +122,14 @@ const styles = StyleSheet.create({
     fontSize: hp(3),
     fontWeight: "bold",
     color: '#397454',
+    textAlign: 'center',
+    marginTop: -hp(4),
+  },
+  welcomeText_two:{
+    fontSize: hp(3),
+    fontWeight: "bold",
+    color: '#397454',
+    marginTop: -hp(2)
   },
   title: {
     color: theme.colors.text,
