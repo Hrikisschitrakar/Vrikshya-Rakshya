@@ -15,7 +15,7 @@ import logo from "../assets/images/logo.png";
 
 const isValidEmail = (emailRef) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(emailRef);
 
-
+const isValidPassword = (passwordRef) => passwordRef.current.length>6;
 const Login = () => {
   const router = useRouter();
   const emailRef = useRef("");
@@ -40,6 +40,9 @@ const Login = () => {
     if (passwordRef.current.length < 6) {
       Alert.alert("Weak Password", "Password must be at least 6 characters long.");
     }
+    if (isValidEmail(emailRef.current) || isValidPassword(passwordRef.current)) {
+      router.push('customerLandingPage');}
+     
   };
 
   return (
