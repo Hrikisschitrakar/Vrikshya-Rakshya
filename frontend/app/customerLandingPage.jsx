@@ -9,7 +9,7 @@ import { useRouter } from "expo-router";
 
 const MarketplaceScreen = () => <Text style={styles.screenText}>Marketplace</Text>;
 const NotificationScreen = () => <Text style={styles.screenText}>Notifications</Text>;
-const ProfileScreen = () => <Text style={styles.screenText}>Profile</Text>;
+const ProfileScreen = () => <Text style={styles.screenText}>Profile kabdfkjda</Text>;
 
 const Tab = createBottomTabNavigator();
 
@@ -46,33 +46,7 @@ const HomeScreen = () => {
   );
 };
 
-// const CustomerLandingPage = () => {
-//   const router = useRouter();
-//   return (
-//     <Tab.Navigator
-//       screenOptions={({ route }) => ({
-//         tabBarIcon: ({ color, size }) => {
-//           let iconName;
-//           if (route.name === "Home") iconName = "home";
-//           else if (route.name === "MarketPlace") iconName = "cart";
-//           else if (route.name === "Notifications") iconName = "notifications";
-//           else if (route.name === "Profile") iconName = "person";
 
-//           return <Icon name={iconName} size={size} color={color} onPress={() => route.name === "MarketPlace" && router.push("marketPlace")} />;
-//           return <Icon name={iconName} size={size} color={color} onPress={() => route.name === "Notifications" && router.push("notification")} />;
-//         },
-//         tabBarActiveTintColor: "#397454",
-//         tabBarInactiveTintColor: "gray",
-//         headerShown: false,
-//       })}
-//     >
-//       <Tab.Screen name="Home" component={HomeScreen} />
-//       <Tab.Screen name="MarketPlace" component={MarketplaceScreen} />
-//       <Tab.Screen name="Notifications" component={NotificationScreen} />
-//       <Tab.Screen name="Profile" component={ProfileScreen} />
-//     </Tab.Navigator>
-//   );
-// };
 const CustomerLandingPage = () => {
     const router = useRouter();
   
@@ -94,6 +68,7 @@ const CustomerLandingPage = () => {
                 onPress={() => {
                   if (route.name === "MarketPlace") router.push("marketPlace");
                   else if (route.name === "Notifications") router.push("notificationCenter");
+                  else if (route.name === "Profile") router.push("profile");
                 }}
               />
             );
