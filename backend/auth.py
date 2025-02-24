@@ -38,14 +38,17 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+    if db.query(User).filter(User.email == user.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered.")
+    if db.query(User).filter(User.username == user.username).first():
+        raise HTTPException(status_code=400, detail="Username already taken.")
     hashed_password = hash_password(user.password)
     new_user = User(
         email=user.email,
         username=user.username,
-        full_name=user.full_name,
+        name=user.name,
         role=user.role.lower(),
-        hashed_password=hashed_password
+        password=hashed_password
     )
     db.add(new_user)
     db.commit()
