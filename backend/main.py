@@ -7,6 +7,7 @@ from fastapi import  Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
+from auth import auth_router 
 # Initialize FastAPI
 app = FastAPI()
 
@@ -29,3 +30,4 @@ def check_db(db: Session = Depends(get_db)):
         return {"message": "✅ Database connection successful 🚀"}
     except Exception as e:
         return {"error": str(e)}
+

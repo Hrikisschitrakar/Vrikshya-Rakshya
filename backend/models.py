@@ -5,6 +5,7 @@ import uuid
 from database import Base
 from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
+from pydantic import BaseModel, EmailStr
  # Ensure this is correctly imported
 
 class Product(Base):
@@ -24,10 +25,28 @@ class Product(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    username = Column(String, unique=True, index=True, nullable=False)
-    name = Column(String, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String(50), unique=True, nullable=False)
+    name = Column(String(100), nullable=False)
+    username = Column(String(50), unique=True, nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
     password = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # Either "customer" or "vendor"
-    is_active = Column(Boolean, default=True)  # Fix the error by importing Boolean
+    role = Column(String(20), nullable=False)  # Ensure lowercase during signup
+    created_at = Column(DateTime, default=func.now())
+    is_active = Column(Boolean, default=True)
+
+
+
+# Login Schema
+class LoginSchema(BaseModel):
+    identifier: str  # Can be either email or username
+    password: str
+
+# Signup Schema
+class SignupSchema(BaseModel):
+    user_id: str
+    name: str
+    username: str
+    email: EmailStr
+    password: str
+    role: str

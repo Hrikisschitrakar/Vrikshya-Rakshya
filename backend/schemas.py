@@ -8,7 +8,7 @@ class UserCreate(BaseModel):
     password: str
 
 class UserLogin(BaseModel):
-    email: str
+    identifier: str  # This can be either username or email
     password: str
 
 class UserResponse(BaseModel):
