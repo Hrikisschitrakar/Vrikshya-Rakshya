@@ -125,58 +125,58 @@
 
 
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from models.user import User
-from schemas import UserLogin
-from database import get_db
-from passlib.context import CryptContext
-import jwt
-import datetime
+# from fastapi import APIRouter, Depends, HTTPException
+# from sqlalchemy.ext.asyncio import AsyncSession
+# from sqlalchemy.future import select
+# from models.user import User
+# from schemas import UserLogin
+# from database import get_db
+# from passlib.context import CryptContext
+# import jwt
+# import datetime
 
-# Password Hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# # Password Hashing
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT Secret Key
-SECRET_KEY = "6ec55fdc0630e01a0688d8c7c3524784a8601d9c797f716ca2b588ba68e3943d"
-ALGORITHM = "HS256"
+# # JWT Secret Key
+# SECRET_KEY = "6ec55fdc0630e01a0688d8c7c3524784a8601d9c797f716ca2b588ba68e3943d"
+# ALGORITHM = "HS256"
 
-# FastAPI Router
-auth_router = APIRouter()
+# # FastAPI Router
+# auth_router = APIRouter()
 
-# Password Verification Function
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+# # Password Verification Function
+# def verify_password(plain_password: str, hashed_password: str) -> bool:
+#     return pwd_context.verify(plain_password, hashed_password)
 
-# JWT Token Function
-def create_access_token(data: dict, expires_delta: int = 60):
-    to_encode = data.copy()
-    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_delta)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+# # JWT Token Function
+# def create_access_token(data: dict, expires_delta: int = 60):
+#     to_encode = data.copy()
+#     expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_delta)
+#     to_encode.update({"exp": expire})
+#     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# ✅ Login Route (Users can log in with Email OR Username)
-@auth_router.post("/login")
-async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
-    try:
-        # Query user by email OR username
-        query = select(User).where((User.username == user_data.identifier) | (User.email == user_data.identifier))
-        result = await db.execute(query)
-        user = result.scalar_one_or_none()
+# # ✅ Login Route (Users can log in with Email OR Username)
+# @auth_router.post("/login")
+# async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
+#     try:
+#         # Query user by email OR username
+#         query = select(Users).where((Users.username == user_data.identifier) | (Users.email == user_data.identifier))
+#         result = await db.execute(query)
+#         user = result.scalar_one_or_none()
 
-        # Check if user exists
-        if not user:
-            raise HTTPException(status_code=400, detail="User not found")
+#         # Check if user exists
+#         if not user:
+#             raise HTTPException(status_code=400, detail="User not found")
 
-        # Verify password
-        if not verify_password(user_data.password, user.password):
-            raise HTTPException(status_code=400, detail="Incorrect password")
+#         # Verify password
+#         if not verify_password(user_data.password, user.password):
+#             raise HTTPException(status_code=400, detail="Incorrect password")
 
-        # Generate JWT Token
-        access_token = create_access_token({"sub": user.id, "role": user.role})
-        return {"access_token": access_token, "token_type": "bearer"}
+#         # Generate JWT Token
+#         access_token = create_access_token({"sub": user.id, "role": user.role})
+#         return {"access_token": access_token, "token_type": "bearer"}
 
-    except Exception as e:
-        print(f"Error during login: {e}")  # Log the actual error
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+#     except Exception as e:
+#         print(f"Error during login: {e}")  # Log the actual error
+#         raise HTTPException(status_code=500, detail="Internal Server Error")

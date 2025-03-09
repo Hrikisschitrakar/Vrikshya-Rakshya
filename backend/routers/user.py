@@ -32,7 +32,7 @@ async def signup(user_data: SignupSchema, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="User with this email or username already exists")
 
     new_user = User(
-        user_id=user_data.user_id,
+        id=user_data.id,
         name=user_data.name,
         username=user_data.username,
         email=user_data.email,

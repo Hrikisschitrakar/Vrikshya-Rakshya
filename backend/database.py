@@ -91,27 +91,20 @@
 #         yield db
 #     finally:
 #         db.close()
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-import os
-from dotenv import load_dotenv
+DATABASE_URL = "postgresql+psycopg2://fastapi:password@localhost/fastapi_db"
 
-# Load environment variables
-load_dotenv()
-
-DATABASE_URL = "postgresql+asyncpg://vriskya_user:securepassword@localhost/vriskyarakshya"
-
-# Create Async Engine
-engine = create_async_engine(DATABASE_URL, echo=True)
-
-# Create Session Local
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
-
-# Base Model
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 
-# Dependency to get DB session
-async def get_db():
-    async with SessionLocal() as session:
-        yield session
+# Dependency to get a database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
