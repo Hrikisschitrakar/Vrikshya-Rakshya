@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 .env
+=======
+.env
+*.h5
+>>>>>>> almost done with backend
