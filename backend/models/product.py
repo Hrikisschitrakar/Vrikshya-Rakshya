@@ -9,6 +9,7 @@ class Product(Base):
 
     id = Column(UUIDType, primary_key=True, server_default=func.gen_random_uuid(), nullable=False)
     vendor_id = Column(UUIDType, ForeignKey("users.id"), nullable=False)
+    vendor_name = Column(String(100), ForeignKey("vendor_profiles.business_name"), nullable=False)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     price = Column(Float, nullable=False)

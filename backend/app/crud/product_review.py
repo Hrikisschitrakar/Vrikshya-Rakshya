@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from app.models.product_review import ProductReview
+from backend.app.models.review import ProductReview
 from app.models.user import User
 from app.models.marketplace import Product
-from app.schemas.product_review import ProductReviewCreate
+from backend.app.schemas.review import ProductReviewCreate
 
 def create_product_review(db: Session, user_id: int, review: ProductReviewCreate):
     # Check if the user exists

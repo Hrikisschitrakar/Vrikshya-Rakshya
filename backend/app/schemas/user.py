@@ -4,15 +4,16 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
-    phone_number: str
+    full_name: str
     role: str
 
 class UserOut(BaseModel):
     id: int
     username: str
     email: str
-    phone_number: str
+    full_name: str
     role: str
+    token: str  # Added token field
 
     class Config:
         from_attributes = True
@@ -32,3 +33,13 @@ class ChangePassword(BaseModel):
 class ChangeUsername(BaseModel):
     current_password: str
     new_username: str
+
+class ChangeFullName(BaseModel):
+    current_password: str
+    new_full_name: str
+
+class ChangeEmail(BaseModel):
+    current_password: str
+    new_email: str
+
+    

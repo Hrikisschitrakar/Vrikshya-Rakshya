@@ -34,7 +34,7 @@ async def create_password_reset_token(db: Session, email: str):
     # Send the reset email
     reset_link = f"http://127.0.0.1:8000/reset-password?token={token}"
     subject = "Password Reset Request"
-    body = f"Click the following link to reset your password: {reset_link}\nThis link will expire in 1 hour."
+    body = f"Copy the following token: {token}\nThis link will expire in 1 hour."
     success = await send_email(email, subject, body)
     if not success:
         return None

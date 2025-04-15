@@ -1,7 +1,9 @@
+from http.client import HTTPException
 import os
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from app.models.user import User
+from app.models.vendor import VendorProfile
 from app.models.marketplace import Product, Order
 from app.schemas.marketplace import ProductCreate, ProductUpdate, OrderCreate
 
@@ -16,6 +18,8 @@ def create_product(db: Session, vendor_id: int, product: ProductCreate, image_by
     
     db_product = Product(
         vendor_id=vendor_id,
+        vendor_name=db.query(VendorProfile).filter(VendorProfile.user_id == vendor_id).first().business_name,
+        vendor_address=db.query(VendorProfile).filter(VendorProfile.user_id == vendor_id).first().address,
         name=product.name,
         description=product.description,
         price=product.price,
@@ -29,6 +33,18 @@ def create_product(db: Session, vendor_id: int, product: ProductCreate, image_by
 
 def get_products(db: Session, username: str):
     user = db.query(User).filter(User.username == username, User.role == "vendor").first()
+    if not user:
+        return None
+    return db.query(Product).filter(Product.vendor_id == user.id).all()
+
+def get_products_id(db: Session, vendor_id: int):
+    user = db.query(User).filter(User.vendor_id == vendor_id, User.role == "vendor").first()
+    if not user:
+        return None
+    return db.query(Product).filter(Product.vendor_id == user.id).all()
+
+def get_product(db: Session):
+    user = db.query(User)
     if not user:
         return None
     return db.query(Product).filter(Product.vendor_id == user.id).all()
@@ -125,14 +141,21 @@ def create_order(db: Session, username: str, order: OrderCreate):
         return None
     if product.stock < order.quantity:
         return None
+    if not order.order_status:
+        order.order_status = 'pending'
     
     product.stock -= order.quantity
     db_order = Order(
         customer_id=customer.id,
         product_id=product.id,
         quantity=order.quantity,
-        total_price=product.price * order.quantity
+        total_price=product.price * order.quantity,
+        order_status=order.order_status,
+        vendor_id=product.vendor_id,
+        product_name=product.name,
+        address= order.address,
     )
+
     db.add(db_order)
     db.commit()
     db.refresh(db_order)
@@ -144,22 +167,71 @@ def get_order_history(db: Session, username: str):
         return None
     return db.query(Order).filter(Order.customer_id == customer.id).all()
 
-def get_vendor_dashboard(db: Session, username: str):
-    vendor = db.query(User).filter(User.username == username, User.role == "vendor").first()
-    if not vendor:
-        return None
-    
+
+# def get_vendor_dashboard(db, username: str):
+#     # Get vendor's user details
+#     vendor = db.query(User).filter(User.username == username).first()
+
+#     # Calculate the total number of orders for the vendor
+#     total_orders = db.query(Order).join(Product).filter(Product.vendor_id == vendor.id).count()
+
+#     # Calculate the total sales (sum of the total_price from the orders for the vendor)
+#     total_sales = db.query(func.sum(Order.total_price)).join(Product).filter(Product.vendor_id == vendor.id).scalar() or 0
+
+#     # Calculate the total number of products for the vendor
+#     total_products = db.query(Product).filter(Product.vendor_id == vendor.id).count()
+
+#     # Calculate the total revenue (sum of the total_price from the orders)
+#     total_revenue = db.query(func.sum(Order.total_price)).join(Product).filter(Product.vendor_id == vendor.id).scalar() or 0
+
+#     # Build the dashboard response
+#     dashboard_data = {
+#         "total_orders": total_orders,
+#         "total_sales": total_sales,
+#         "total_products": total_products,
+#         "vendor_id": vendor.id,
+#         "vendor_name": vendor.username,  # Assuming 'vendor.username' is the business name
+#         "total_revenue": total_revenue
+#     }
+
+#     return dashboard_data
+
+from sqlalchemy.orm import aliased
+from sqlalchemy import func
+
+def get_vendor_dashboard(db, username: str):
+    # Get vendor's user details
+    vendor = db.query(User).filter(User.username == username).first()
+
+    # Create an alias for Product to avoid ambiguity in the join
+    product_alias = aliased(Product)
+
+    # Calculate the total number of orders for the vendor
+    total_orders = db.query(Order).join(
+        product_alias, product_alias.id == Order.product_id  # Explicitly specify the join condition
+    ).filter(product_alias.vendor_id == vendor.id).count()
+
+    # Calculate the total sales (sum of the total_price from the orders for the vendor)
+    total_sales = db.query(func.sum(Order.total_price)).join(
+        product_alias, product_alias.id == Order.product_id
+    ).filter(product_alias.vendor_id == vendor.id).scalar() or 0
+
+    # Calculate the total number of products for the vendor
     total_products = db.query(Product).filter(Product.vendor_id == vendor.id).count()
-    total_orders = db.query(Order).join(Product).filter(Product.vendor_id == vendor.id).count()
-    total_revenue = (
-        db.query(func.sum(Order.total_price))
-        .join(Product)
-        .filter(Product.vendor_id == vendor.id)
-        .scalar() or 0
-    )
-    
-    return {
-        "total_products": total_products,
+
+    # Calculate the total revenue (sum of the total_price from the orders)
+    total_revenue = db.query(func.sum(Order.total_price)).join(
+        product_alias, product_alias.id == Order.product_id
+    ).filter(product_alias.vendor_id == vendor.id).scalar() or 0
+
+    # Build the dashboard response
+    dashboard_data = {
         "total_orders": total_orders,
+        "total_sales": total_sales,
+        "total_products": total_products,
+        "vendor_id": vendor.id,
+        "vendor_name": vendor.username,  # Assuming 'vendor.username' is the business name
         "total_revenue": total_revenue
     }
+
+    return dashboard_data

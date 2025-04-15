@@ -1,10 +1,24 @@
+
+import shutil
+from app.crud.remedies import get_remedy_by_disease_name
+from app.schemas.remedies import RemedyResponse
+from app.crud.saved_remedies import save_remedy
+from app.models.saved_remedies import SavedRemedies
+from app.schemas.saved_remedies import SavedRemedyOut, SavedRemedyResponse
+from app.models.remedies import Remedy
+from app.schemas.customer_dashboard import CustomerDashboard
+from app.crud.wish_list import add_to_wishlist, get_wishlist, remove_from_wishlist
+from app.schemas.wish_list import WishListOut
+from app.models.customer import CustomerProfile
+from app.schemas.customer import CustomerProfileCreate, CustomerProfileOut
+from app.models.wish_list import WishList
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Query
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.database import Base, engine, get_db
-from app.schemas.user import UserCreate, UserOut, UserDelete, UserLogin, ChangePassword, ChangeUsername  # Add ChangeUsername
+from app.schemas.user import UserCreate, UserOut, UserDelete, UserLogin, ChangePassword, ChangeUsername, ChangeFullName  # Add ChangeUsername
 from app.schemas.vendor import VendorProfileCreate, VendorProfileOut
-from app.schemas.marketplace import ProductCreate, ProductOut, ProductUpdate, OrderCreate, OrderOut, VendorDashboard
+from app.schemas.marketplace import OrderOutVendor, ProductCreate, ProductOut, ProductUpdate, OrderCreate, OrderOut, VendorDashboard
 from app.schemas.chat import ChatMessageCreate, ChatMessageOut
 from app.schemas.notification import NotificationCreate, NotificationOut
 from app.schemas.password_reset import PasswordResetRequest, PasswordReset as PasswordResetSchema
@@ -13,9 +27,9 @@ from app.models.vendor import VendorProfile
 from app.models.marketplace import Product, Order
 from app.models.notification import Notification
 from app.models.password_reset import PasswordReset as PasswordResetModel
-from app.crud.user import create_user, delete_user, authenticate_user, change_password, change_username  # Add change_username
+from app.crud.user import create_user, delete_user, authenticate_user, change_password, change_username, change_fullname  # Add change_username
 from app.crud.vendor import create_vendor_profile, get_vendor_profile, update_vendor_profile, delete_vendor_profile
-from app.crud.marketplace import create_product, get_products, search_products, update_product, delete_product, create_order, get_order_history, get_vendor_dashboard
+from app.crud.marketplace import create_product, get_products, get_products_id, search_products, update_product, delete_product, create_order, get_order_history, get_vendor_dashboard
 from app.crud.chat import create_chat_message, get_chat_history, mark_messages_as_read
 from app.crud.notification import create_notification, get_notifications, mark_notifications_as_read
 from app.crud.password_reset import create_password_reset_token, reset_password
@@ -25,15 +39,65 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 from io import BytesIO
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
 from typing import List
-
+from fastapi.security import OAuth2PasswordBearer
+from app.utils.email import send_email
+from app.crud.profile import create_profile, get_profile_by_username
+from app.schemas.profile import ProfileOut
+from app.models.profile import Profile
 app = FastAPI(title="Vrikshya Rakshya Backend")
+import os
+from app.models.profile import Profile  # Assuming you have the Profile model
+from app.schemas.profile import ProfileOut
+from app.models.review import Review
+from app.schemas.review import ReviewCreate, ReviewOut
+from pydantic import BaseModel
+import httpx
 
+from sqlalchemy.orm import aliased
+from sqlalchemy import func
 # Mount the static directory to serve images
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 Base.metadata.create_all(bind=engine)
+
+SECRET_KEY = "6ec55fdc0630e01a0688d8c7c3524784a8601d9c797f716ca2b588ba68e3943d"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+from fastapi.middleware.cors import CORSMiddleware
+
+
+# Allow all origins for development purposes (change in production)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or use ["http://localhost:3000"] for React Native on local
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods like GET, POST, PUT, DELETE
+    allow_headers=["*"],  # Allows all headers
+)
+
+def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + expires_delta
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+def create_verification_token(data: dict, expires_delta: timedelta = timedelta(hours=1)):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + expires_delta
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_access_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload  # The payload contains the user data
+    except JWTError:
+        return None
 
 # Load the trained model
 model = load_model('/Users/hrikisschitrakar/Desktop/vrik/backend/model/plant_disease_model.h5')
@@ -84,31 +148,135 @@ class_labels = [
 ]
 
 # User endpoints
+# @app.post("/signup", response_model=UserOut)
+# async def signup(user: UserCreate, db: Session = Depends(get_db)):
+#     # Check if username or email already exists
+#     if db.query(User).filter(User.username == user.username).first():
+#         raise HTTPException(status_code=400, detail="Username already registered")
+#     if db.query(User).filter(User.email == user.email).first():
+#         raise HTTPException(status_code=400, detail="Email already registered")
+#     if user.role not in ["customer", "vendor"]:
+#         raise HTTPException(status_code=400, detail="Invalid role")
+    
+#     # Create the user in the database
+#     db_user = create_user(db, user)
+    
+#     # Create an access token for the user
+#     token = create_access_token(data={"sub": db_user.username})
+    
+#     # Return the user data along with the generated token
+#     return {
+#         "id": db_user.id,
+#         "username": db_user.username,
+#         "email": db_user.email,
+#         "full_name": db_user.full_name,
+#         "role": db_user.role,
+#         "token": token  # Include the generated token in the response
+#     }
+
 @app.post("/signup", response_model=UserOut)
 async def signup(user: UserCreate, db: Session = Depends(get_db)):
+    # Check if username or email already exists
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     if user.role not in ["customer", "vendor"]:
         raise HTTPException(status_code=400, detail="Invalid role")
+    
+    # Create the user in the database
     db_user = create_user(db, user)
-    return db_user
+    
+    # Create an access token for the user
+    token = create_access_token(data={"sub": db_user.username})
+    
+    # Send email with the verification link
+    verification_token = create_verification_token(data={"sub": db_user.email})
+    verification_link = f"http://localhost:8000/verify/{verification_token}"
+    email_subject = "Please verify your email"
+    email_body = f"Click the link to verify your email: {verification_link}"
+    
+    email_sent = await send_email(to_email=db_user.email, subject=email_subject, body=email_body)
+    if not email_sent:
+        raise HTTPException(status_code=500, detail="Failed to send verification email")
+    
+    return {
+        "id": db_user.id,
+        "username": db_user.username,
+        "email": db_user.email,
+        "full_name": db_user.full_name,
+        "role": db_user.role,
+        "token": token,  # Include the generated token in the response
+        "message": "User created successfully. Please check your email for verification."
+    }
+
+@app.get("/verify/{verification_token}")
+async def verify_email(verification_token: str, db: Session = Depends(get_db)):
+    try:
+        # Decode the token to get user data
+        payload = verify_access_token(verification_token)
+        if payload is None:
+            raise HTTPException(status_code=400, detail="Invalid or expired token")
+        
+        # Extract the user email from the token
+        email = payload.get("sub")
+        
+        # Find the user in the database
+        user = db.query(User).filter(User.email == email).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Mark the user as verified
+        user.is_verified = True
+        db.commit()
+        
+        return {"message": "Email successfully verified. You can now log in."}
+    
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+
 
 @app.delete("/users", response_model=UserOut)
 async def delete_user_endpoint(user: UserDelete, db: Session = Depends(get_db)):
     db_user = delete_user(db, user.username, user.password)
     if not db_user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
-    return db_user
+    
+    # If needed, issue a new token after deleting the user (typically not done for delete operations)
+    new_token = create_access_token(data={"sub": db_user.username})
+
+    return {
+        "id": db_user.id,
+        "username": db_user.username,
+        "email": db_user.email,
+        "full_name": db_user.full_name,
+        "role": db_user.role,
+        "token": new_token  # Adding the new token to the response
+    }
+
 
 @app.post("/login", response_model=UserOut)
 async def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = authenticate_user(db, user.username, user.password)
     if not db_user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
-    return db_user
+    
+    # Generate token
+    token = create_access_token(data={"sub": db_user.username})
 
+    # Return user info along with token
+    return {
+        "id": db_user.id,
+        "username": db_user.username,
+        "email": db_user.email,
+        "full_name": db_user.full_name,
+        "role": db_user.role,
+        "token": token  # Adding the token to the response
+    }
+
+
+# Function to get the current user from the toke # 
 @app.post("/forgot-password")
 async def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
     password_reset = await create_password_reset_token(db, request.email)
@@ -129,6 +297,20 @@ async def change_password_endpoint(username: str, change_password_data: ChangePa
         raise HTTPException(status_code=401, detail="Invalid username or current password")
     return user
 
+# @app.post("/change-username/{current_username}", response_model=UserOut)
+# async def change_username_endpoint(current_username: str, change_username_data: ChangeUsername, db: Session = Depends(get_db)):
+#     result = change_username(
+#         db,
+#         current_username,
+#         change_username_data.current_password,
+#         change_username_data.new_username
+#     )
+#     if result is None:
+#         raise HTTPException(status_code=401, detail="Invalid username or current password")
+#     if result is False:
+#         raise HTTPException(status_code=400, detail="New username is already taken")
+#     return result
+
 @app.post("/change-username/{current_username}", response_model=UserOut)
 async def change_username_endpoint(current_username: str, change_username_data: ChangeUsername, db: Session = Depends(get_db)):
     result = change_username(
@@ -137,11 +319,123 @@ async def change_username_endpoint(current_username: str, change_username_data: 
         change_username_data.current_password,
         change_username_data.new_username
     )
+    
     if result is None:
         raise HTTPException(status_code=401, detail="Invalid username or current password")
     if result is False:
         raise HTTPException(status_code=400, detail="New username is already taken")
-    return result
+    
+    # Assuming the username change was successful, generate a new token
+    new_token = create_access_token(data={"sub": result.username})  # Update the token generation logic as needed
+
+    # Return the updated user details along with the new token
+    return {"id": result.id, "username": result.username, "email": result.email, "full_name": result.full_name, "role": result.role, "token": new_token}
+
+@app.post("/change-fullname/{current_fullname}", response_model=UserOut)
+async def change_fullname_endpoint(current_fullname: str, change_fullname_data: ChangeFullName, db: Session = Depends(get_db)):
+    # Change the full name in the database
+    result = change_fullname(
+        db,
+        current_fullname,
+        change_fullname_data.current_password,
+        change_fullname_data.new_full_name
+    )
+    
+    # If the result is None, it means the username or password was incorrect
+    if result is None:
+        raise HTTPException(status_code=401, detail="Invalid name or current password")
+    
+    # If the result is False, it means the new full name is already taken (or some other error occurred)
+    if result is False:
+        raise HTTPException(status_code=400, detail="New name is already taken")
+    
+    # Assuming the full name change was successful, generate a new token (based on username)
+    new_token = create_access_token(data={"sub": result.full_name})  # Use result.full_name
+    
+    # Return the updated user details along with the new token
+    return {
+        "id": result.id,
+        "username": result.username,
+        "email": result.email,
+        "full_name": result.full_name,
+        "role": result.role,
+        "token": new_token  # Include the new token in the response
+    }
+
+# Profile POST endpoint
+
+@app.post("/profile")
+async def create_profile_endpoint(username: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # Get the file extension and create the filename
+    file_extension = file.filename.split('.')[-1]
+    file_name = f"{username}_profile.{file_extension}"
+    
+    # Define the directory to save the file
+    profile_dir = "static/profiles"
+    
+    # Create the directory if it doesn't exist
+    os.makedirs(profile_dir, exist_ok=True)
+    
+    # Define the file location
+    file_location = os.path.join(profile_dir, file_name)
+
+    # Save the file to the specified location
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Save the image URL to the database
+    image_url = f"/static/profiles/{file_name}"
+    
+    # Check if the profile already exists
+    db_profile = db.query(Profile).filter(Profile.username == username).first()
+    
+    if db_profile:
+        db_profile.image_url = image_url
+        db.commit()
+        db.refresh(db_profile)
+        return {"message": "Profile updated successfully", "image_url": image_url}
+    
+    # If no profile exists, create a new profile
+    new_profile = Profile(username=username, image_url=image_url)
+    db.add(new_profile)
+    db.commit()
+    db.refresh(new_profile)
+
+    return {"message": "Profile created successfully", "image_url": image_url}
+
+
+@app.get("/profile/{username}", response_model=ProfileOut)
+async def get_profile(username: str, db: Session = Depends(get_db)):
+    # Query the database for the profile by username
+    db_profile = db.query(Profile).filter(Profile.username == username).first()
+
+    # If the profile is not found, raise a 404 error
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return db_profile
+
+@app.put("/profile/{username}", response_model=ProfileOut)
+async def update_profile_image(username: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # Query the profile by username
+    db_profile = db.query(Profile).filter(Profile.username == username).first()
+
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # Generate the image file path
+    file_location = f"static/profiles/{username}_{file.filename}"
+
+    # Save the image to the server
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Update the profile with the new image URL
+    db_profile.image_url = f"/static/profiles/{username}_{file.filename}"
+    db.commit()
+
+    return db_profile
+
 
 # Disease prediction endpoint
 @app.get("/")
@@ -167,6 +461,15 @@ async def predict(file: UploadFile = File(...)):
         }
     except Exception as e:
         return {"error": str(e)}
+
+# In your main.py or endpoints file
+@app.get("/plant/remedies/{disease_name}", response_model=RemedyResponse)
+def get_remedies_by_disease(disease_name: str, db: Session = Depends(get_db)):
+    remedy = get_remedy_by_disease_name(db, disease_name)
+    if remedy:
+        return remedy
+    raise HTTPException(status_code=404, detail="Disease not found")
+
 
 # Vendor endpoints
 @app.post("/vendor/profile/{username}", response_model=VendorProfileOut)
@@ -222,7 +525,7 @@ async def create_product_endpoint(
         raise HTTPException(status_code=400, detail="File must be an image")
     image_bytes = await file.read()
     product = ProductCreate(name=name, description=description, price=price, stock=stock)
-    db_product = create_product(db, vendor.id, product, image_bytes)
+    db_product = create_product(db, vendor.id,  product, image_bytes)
     return db_product
 
 @app.get("/products/{username}", response_model=list[ProductOut])
@@ -231,6 +534,113 @@ async def get_products_endpoint(username: str, db: Session = Depends(get_db)):
     if not products:
         return []
     return products
+
+
+@app.post("/reviews", response_model=ReviewOut)
+async def create_review(review: ReviewCreate, db: Session = Depends(get_db)):
+    # Check if the user has already reviewed the product
+    existing_review = db.query(Review).filter(Review.product_id == review.product_id, Review.user_id == review.user_id).first()
+    if existing_review:
+        raise HTTPException(status_code=400, detail="You have already reviewed this product.")
+
+    # Create new review with only the rating
+    db_review = Review(product_id=review.product_id, user_id=review.user_id, rating=review.rating)
+    db.add(db_review)
+    db.commit()
+    db.refresh(db_review)
+    return db_review
+
+
+@app.get("/reviews/{product_id}", response_model=list[ReviewOut])
+async def get_reviews(product_id: int, db: Session = Depends(get_db)):
+    # Query the reviews for the given product_id
+    reviews = db.query(Review).filter(Review.product_id == product_id).all()
+    
+    # If no reviews are found, raise an HTTPException with a 404 status code
+    if not reviews:
+        raise HTTPException(status_code=404, detail="No reviews found for this product.")
+    
+    return reviews
+
+@app.get("/reviews/average/{product_id}", response_model=float)
+async def get_average_rating(product_id: int, db: Session = Depends(get_db)):
+    # Query all reviews for the given product_id
+    reviews = db.query(Review).filter(Review.product_id == product_id).all()
+    
+    # If no reviews are found, raise a 404 error
+    if not reviews:
+        raise HTTPException(status_code=404, detail="No reviews found for this product.")
+    
+    # Calculate the average rating
+    average_rating = sum([review.rating for review in reviews]) / len(reviews)
+    
+    return average_rating
+
+
+@app.get("/products/{vendor_id}", response_model=list[ProductOut])
+async def get_products_endpoint(vendor_id: int, db: Session = Depends(get_db)):
+    products = get_products_id(db, vendor_id)
+    if not products:
+        return []
+    return products
+
+@app.get("/products", response_model=list[ProductOut])
+async def get_all_products_endpoint(db: Session = Depends(get_db)):
+    products = db.query(Product).all()
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+    return products
+
+
+@app.post("/restock", response_model=ProductOut)
+async def restock_product(product_id: int, quantity: int, db: Session = Depends(get_db)):
+    # Find the product by its product_id
+    product = db.query(Product).filter(Product.id == product_id).first()
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    
+    # Verify if the vendor is the owner of the product
+    # if product.vendor_id != vendor_id:
+    #     raise HTTPException(status_code=403, detail="You are not authorized to restock this product.")
+    
+    # Check if quantity is a positive number
+    if quantity <= 0:
+        raise HTTPException(status_code=400, detail="Quantity must be greater than zero.")
+    
+    # Restock the product (increase the stock by the given quantity)
+    product.stock += quantity
+    
+    # Commit the changes to the database
+    db.commit()
+    db.refresh(product)
+    
+    return product
+
+@app.post("/price", response_model=ProductOut)
+async def replace_product_price(product_id: int, price: int, db: Session = Depends(get_db)):
+    # Find the product by its product_id
+    product = db.query(Product).filter(Product.id == product_id).first()
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    
+    # Verify if the vendor is the owner of the product
+    # if product.vendor_id != vendor_id:
+    #     raise HTTPException(status_code=403, detail="You are not authorized to restock this product.")
+    
+    # Check if quantity is a positive number
+    if price <= 0:
+        raise HTTPException(status_code=400, detail="Price must be greater than zero.")
+    
+    # Restock the product (increase the stock by the given quantity)
+    product.price = price
+    
+    # Commit the changes to the database
+    db.commit()
+    db.refresh(product)
+    
+    return product
 
 @app.get("/products/search", response_model=list[ProductOut])
 async def search_products_endpoint(
@@ -318,12 +728,92 @@ async def create_order_endpoint(username: str, order: OrderCreate, db: Session =
 
     return db_order
 
-@app.get("/orders/history/{username}", response_model=list[OrderOut])
+# @app.get("/orders/history/{username}", response_model=list[OrderOut])
+# async def get_order_history_endpoint(username: str, db: Session = Depends(get_db)):
+#     orders = get_order_history(db, username)
+#     if not orders:
+#         return []
+#     return orders
+@app.get("/orders/history/{username}", response_model=List[OrderOut])
 async def get_order_history_endpoint(username: str, db: Session = Depends(get_db)):
-    orders = get_order_history(db, username)
+    # Get the customer by username
+    customer = db.query(User).filter(User.username == username, User.role == "customer").first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Query the orders with product details
+    orders = db.query(Order, Product).join(Product, Product.id == Order.product_id).filter(Order.customer_id == customer.id).all()
+
+    # Prepare the response with the necessary fields
+    response = []
+    for order, product in orders:
+        response.append({
+            "id": order.id,
+            "product_id": order.product_id,
+            "vendor_id": product.vendor_id,  # Ensure vendor_id is set
+            "customer_id": order.customer_id,
+            "quantity": order.quantity,
+            "total_price": order.total_price,
+            "order_status": order.order_status,
+            "product_name": product.name,  # Ensure product_name is included
+            "created_at": order.created_at,
+            "address": order.address,  # Ensure vendor_address is included
+        })
+    
+    return response
+
+# Endpoint to get the orders for a vendor
+# Endpoint to get the orders for a vendor with the product name
+@app.get("/orders/vendor-history/{vendor_username}", response_model=List[OrderOutVendor])
+async def get_vendor_orders_endpoint(vendor_username: str, db: Session = Depends(get_db)):
+    # Get the vendor by username (ensure vendor role)
+    vendor = db.query(User).filter(User.username == vendor_username, User.role == "vendor").first()
+    
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    # Explicitly set the base table for the join using select_from()
+    orders = db.query(
+        Order.id.label('order_id'),
+        Product.name.label('product_name'),
+        Product.vendor_name,
+        Product.vendor_address,
+        Order.customer_id,
+        User.full_name.label('full_name'),  # Fetch full_name from the User table
+        Order.quantity,
+        Order.total_price,
+        Order.order_status,
+        Order.created_at,
+        Product.vendor_id  # Vendor ID from Product table
+    ).select_from(Order).join(Product, Product.id == Order.product_id).join(User, User.id == Order.customer_id).filter(Product.vendor_id == vendor.id).all()
+
     if not orders:
-        return []
-    return orders
+        return []  # Return empty list if no orders found
+
+    # Return orders formatted correctly with full_name and vendor_id
+    result = [
+        {
+            "order_id": order.order_id,
+            "product_name": order.product_name,
+            "vendor_name": order.vendor_name,
+            "vendor_address": order.vendor_address,
+            "address": order.vendor_address,
+            "customer_id": order.customer_id,
+            "full_name": order.full_name,  # Add full_name to the response
+            "quantity": order.quantity,
+            "total_price": order.total_price,
+            "order_status": order.order_status,
+            "created_at": order.created_at,
+            "vendor_id": order.vendor_id,  # Include vendor_id as well
+        }
+        for order in orders
+    ]
+    
+    return result
+
+
+
+
 
 # Chat endpoints
 @app.websocket("/ws/chat/{username}")
@@ -486,3 +976,209 @@ async def mark_notifications_as_read_endpoint(username: str, db: Session = Depen
         raise HTTPException(status_code=404, detail="User not found")
     notifications = mark_notifications_as_read(db, user.id)
     return {"message": f"Marked {len(notifications)} notifications as read"}
+
+
+class PaymentRequest(BaseModel):
+    amount: float
+    mobile_number: str
+    product_name: str
+    email: str
+
+
+KHALTI_API_URL = os.getenv("KHALTI_API_URL")
+KHALTI_API_KEY = os.getenv("KHALTI_API_KEY")
+
+
+@app.post("/create-payment/")
+async def create_payment(payment: PaymentRequest):
+    payload = {
+        "amount": payment.amount * 100,  # Amount should be in Paisa (1 Nrs = 100 Paisa)
+        "mobile": payment.mobile_number,
+        "product_identity": payment.product_name,
+        "email": payment.email,
+    }
+
+    headers = {
+        "Authorization": f"Key {KHALTI_API_KEY}"
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(KHALTI_API_URL, json=payload, headers=headers)
+            response_data = response.json()
+            
+            if response.status_code == 201:
+                return {"payment_url": response_data["payment_url"]}
+            else:
+                raise HTTPException(status_code=400, detail="Failed to create payment order")
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=500, detail="Internal Server Error")
+        
+
+
+
+@app.post("/save-remedy", response_model=SavedRemedyResponse)
+async def save_remedy_endpoint(username: str, disease_name: str, db: Session = Depends(get_db)):
+    # Save the remedy
+    saved_remedy = save_remedy(db, username, disease_name)
+    
+    if saved_remedy:
+        return saved_remedy
+    else:
+        raise HTTPException(status_code=404, detail="Disease name not found in remedies")
+    
+
+@app.get("/saved-remedies/{username}", response_model=list[SavedRemedyOut])
+async def get_saved_remedies(username: str, db: Session = Depends(get_db)):
+    # Query the saved_remedies table for the given username
+    saved_remedies = db.query(SavedRemedies).filter(SavedRemedies.username == username).all()
+    
+    if not saved_remedies:
+        raise HTTPException(status_code=404, detail="No saved remedies found for this username")
+    
+    return saved_remedies
+
+# @app.get("/customer/dashboard/{username}", response_model=CustomerDashboard)
+# async def get_customer_dashboard(username: str, db: Session = Depends(get_db)):
+#     # Get the customer user details
+#     customer = db.query(User).filter(User.username == username).first()
+#     if not customer:
+#         raise HTTPException(status_code=404, detail="Customer not found")
+
+#     # Calculate the total number of orders for the customer
+#     total_orders = db.query(Order).filter(Order.customer_id == customer.id).count()
+
+#     # Calculate the total money spent by the customer (sum of the total_price from the orders)
+#     total_spent = db.query(func.sum(Order.total_price)).filter(Order.customer_id == customer.id).scalar() or 0
+
+#     # Build the customer dashboard response
+#     dashboard_data = {
+#         "total_orders": total_orders,
+#         "total_spent": total_spent,
+#         "customer_id": customer.id,
+#         "customer_name": customer.full_name,  # Assuming 'customer.full_name' is the name of the customer
+#     }
+
+#     return dashboard_data
+
+@app.get("/customer/dashboard/{username}", response_model=CustomerDashboard)
+async def get_customer_dashboard(username: str, db: Session = Depends(get_db)):
+    # Query the customer from the User table
+    customer = db.query(User).filter(User.username == username, User.role == "customer").first()
+    
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Query to get the total number of orders for the customer
+    total_orders = db.query(Order).filter(Order.customer_id == customer.id).count()
+    
+    # Query to get the total amount of money spent by the customer
+    total_spent = db.query(func.sum(Order.total_price)).filter(Order.customer_id == customer.id).scalar() or 0.0
+    
+    # Query to get the wishlist count for the customer
+    wishlist_count = db.query(WishList).filter(WishList.customer_id == customer.id).count()
+    
+    # Create the dashboard response with the order count, total spent, and wishlist count
+    dashboard_data = CustomerDashboard(
+        customer_id=customer.id,  # Include customer_id
+        customer_name=customer.full_name,  # Include customer_name
+        total_orders=total_orders,
+        total_spent=total_spent,
+        wishlist_count=wishlist_count
+    )
+
+    return dashboard_data
+
+@app.post("/wishlist/{username}/{product_id}", response_model=WishListOut)
+async def add_to_wishlist_endpoint(username: str, product_id: int, db: Session = Depends(get_db)):
+    # Get the user by username
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Add the product to the user's wish list
+    wish_list_item = add_to_wishlist(db, user.id, product_id)
+    
+    if not wish_list_item:
+        raise HTTPException(status_code=400, detail="Product already in wish list")
+    
+    return wish_list_item
+
+@app.get("/wishlist/{username}", response_model=List[WishListOut])
+async def get_wishlist_endpoint(username: str, db: Session = Depends(get_db)):
+    # Get the user by username
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Retrieve the user's wish list
+    wishlist = get_wishlist(db, user.id)
+    
+    if not wishlist:
+        raise HTTPException(status_code=404, detail="No items in wish list")
+    
+    return wishlist
+
+@app.delete("/wishlist/{username}/{product_id}", response_model=WishListOut)
+async def remove_from_wishlist_endpoint(username: str, product_id: int, db: Session = Depends(get_db)):
+    # Get the user by username
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Remove the product from the user's wish list
+    wish_list_item = remove_from_wishlist(db, user.id, product_id)
+    
+    if not wish_list_item:
+        raise HTTPException(status_code=404, detail="Product not found in wish list")
+    
+    return wish_list_item
+
+@app.post("/customer/profile/{username}", response_model=CustomerProfileOut)
+async def create_or_update_customer_profile(username: str, customer_profile: CustomerProfileCreate, db: Session = Depends(get_db)):
+    # Fetch the user by username
+    user = db.query(User).filter(User.username == username).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the user already has a profile
+    existing_profile = db.query(CustomerProfile).filter(CustomerProfile.username == username).first()
+
+    if existing_profile:
+        # If profile exists, update it
+        existing_profile.email = customer_profile.email
+        existing_profile.home_address = customer_profile.home_address
+        existing_profile.full_name = user.full_name  # Keep full_name from the User table
+
+        db.commit()
+        db.refresh(existing_profile)
+
+        return existing_profile
+
+    # If no profile exists, create a new one
+    new_profile = CustomerProfile(
+        username=username,
+        email=customer_profile.email,
+        home_address=customer_profile.home_address,
+        phone_number=customer_profile.phone_number,  # Use phone_number from the User table
+        full_name=user.full_name,  # Use full_name from the User table
+    )
+
+    db.add(new_profile)
+    db.commit()
+    db.refresh(new_profile)
+
+    return new_profile
+
+
+@app.get("/customer/profile/{username}", response_model=CustomerProfileOut)
+async def get_customer_profile(username: str, db: Session = Depends(get_db)):
+    # Query the customer profile based on the username
+    customer_profile = db.query(CustomerProfile).filter(CustomerProfile.username == username).first()
+
+    # If the profile doesn't exist, raise an HTTPException with 404 status
+    if not customer_profile:
+        raise HTTPException(status_code=404, detail="Customer profile not found")
+
+    return customer_profile

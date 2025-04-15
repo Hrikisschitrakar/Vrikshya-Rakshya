@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -13,6 +12,7 @@ import Input from "../components/Input";
 import BackButton from "../components/BackButton";
 import Icon from "../assets/icons";
 import logo from "../assets/images/logo.png";
+import axios from 'axios'; // Import axios for making API requests
 
 const isValidEmail = (emailRef) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(emailRef);
 
@@ -31,25 +31,38 @@ const Forgot = () => {
   const onSubmit = async () => {
     if (!emailRef.current || !nameRef.current) {
       Alert.alert('Login', "Please fill all the fields!");
+      return;
     }
-    if (emailRef.current && nameRef.current) {
-        if (!isValidEmail(emailRef.current)) {
-            Alert.alert("Invalid Email", "Please enter a valid email address.");
-          }
-        if (isValidEmail(emailRef.current)) {
-            Alert.alert(
-                "Thank You!!",
-                "Please check your email",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => router.push('login'), // Navigate after pressing OK
-                  },
-                ]
-              );
 
-        }
-       
+    if (!isValidEmail(emailRef.current)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Make a POST request to the backend forgot-password endpoint
+      const response = await axios.post('http://127.0.0.1:8000/forgot-password', {
+        email: emailRef.current,
+      });
+
+      Alert.alert(
+        "Thank You!!",
+        response.data.message || "Please check your email",
+        [
+          {
+            text: "OK",
+            onPress: () => router.push('forgetPassword'), // Navigate to forgetPassword.jsx after pressing OK
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Something went wrong. Please try again later."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 

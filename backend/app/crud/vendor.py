@@ -10,8 +10,11 @@ def create_vendor_profile(db: Session, username: str, vendor: VendorProfileCreat
     db_vendor = VendorProfile(
         user_id=user.id,
         business_name=vendor.business_name,
+        full_name=user.full_name,
         address=vendor.address,
-        description=vendor.description
+        description=vendor.description,
+        phone_number=vendor.phone_number,
+        email = vendor.email,
     )
     db.add(db_vendor)
     db.commit()
@@ -34,6 +37,7 @@ def update_vendor_profile(db: Session, username: str, vendor: VendorProfileCreat
     db_vendor.business_name = vendor.business_name
     db_vendor.address = vendor.address
     db_vendor.description = vendor.description
+    db_vendor.phone_number = vendor.phone_number
     db.commit()
     db.refresh(db_vendor)
     return db_vendor

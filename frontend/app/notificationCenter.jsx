@@ -1,10 +1,29 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
-const MarketplaceScreen = () => <Text style={styles.screenText}>Marketplace</Text>;
-const HomeScreen = () => <Text style = {styles.screenText}>Home</Text>;
-const ProfileScreen = () => <Text style={styles.screenText}>Profile</Text>;
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import axios from "axios";
+import { useRoute } from "@react-navigation/native";
+
 const NotificationCenter = () => {
+  const route = useRoute(); // Access route params
+  const { username } = route.params; // Get username from params
   const [activeTab, setActiveTab] = useState("notifications");
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/notifications/${username}`);
+        setNotifications(response.data);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [username]);
 
   return (
     <View style={styles.container}>
@@ -42,25 +61,19 @@ const NotificationCenter = () => {
               <Text style={styles.timestamp}>Yesterday</Text>
             </View>
           </>
+        ) : loading ? (
+          <ActivityIndicator size="large" color="#397454" />
         ) : (
           <>
-            <Text style={styles.sectionTitle}>Recent Notifications</Text>
-            <View style={styles.notification}>
-              <Text style={styles.notificationText}>🎉 New Vendor in Town!</Text>
-              <Text style={styles.timestamp}>5 minutes ago</Text>
-            </View>
-            <View style={styles.notification}>
-              <Text style={styles.notificationText}>⭐ Give a rating to "Green Pesticides"</Text>
-              <Text style={styles.timestamp}>30 minutes ago</Text>
-            </View>
-            <View style={styles.notification}>
-              <Text style={styles.notificationText}>✅ Payment was successful!</Text>
-              <Text style={styles.timestamp}>1 hour ago</Text>
-            </View>
-            <View style={styles.notification}>
-              <Text style={styles.notificationText}>📦 Your parcel is on the way</Text>
-              <Text style={styles.timestamp}>2 hours ago</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Recent Notifications {username}</Text>
+            {notifications.map((notification) => (
+              <View key={notification.id} style={styles.notification}>
+                <Text style={styles.notificationText}>{notification.content}</Text>
+                <Text style={styles.timestamp}>
+                  {new Date(notification.created_at).toLocaleString()}
+                </Text>
+              </View>
+            ))}
           </>
         )}
       </ScrollView>
