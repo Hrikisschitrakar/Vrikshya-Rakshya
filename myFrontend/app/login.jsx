@@ -14,6 +14,8 @@ import logo from "../assets/images/logo.png";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview"; // Import WebView
+import config from "../config"; // Import your config file
+
 
 // Base URL of your backend
 const BASE_URL = "http://192.168.18.128:8000"; // Update this with your FastAPI backend URL
@@ -57,7 +59,7 @@ const Login = () => {
       console.log("Logging in with username:", usernameRef.current);
       
       // Call the API to log in
-      const response = await axios.post(`${BASE_URL}/login`, {
+      const response = await axios.post(`${config.API_IP}/login`, {
         username: usernameRef.current,  // Backend expects `username`
         password: passwordRef.current,  // Backend expects `password`
       });
@@ -157,7 +159,7 @@ const Login = () => {
             <Button title="Login" loading={loading} onPress={onSubmit} />
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account yet?</Text>
+              <Text style={styles.footerText}> Don&apos;t have an account yet?</Text>
               <Pressable onPress={() => router.push("signUp")}>
                 <Text style={[styles.footerText, { color: "#397454", fontWeight: "bold" }]}>
                   Sign Up Now

@@ -46,7 +46,7 @@ class OrderOut(BaseModel):
     order_status: str
     created_at: datetime
     product_name: str
-    address: str
+    address: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -64,7 +64,7 @@ class OrderOutVendor(BaseModel):
     order_status: str
     created_at: datetime
     vendor_id: int
-    address: str
+    address: Optional[str] = None
 
     class Config:
         orm_mode = True

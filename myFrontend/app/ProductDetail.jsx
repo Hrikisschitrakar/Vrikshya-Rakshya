@@ -550,7 +550,7 @@ import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaVi
 import { Package, MapPin, ShoppingCart } from 'lucide-react-native';
 import { useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';  // Import WebView
-
+import config from '../config';
 const ProductDetail = () => {
   const route = useRoute();
   const { productData: product } = route.params;
@@ -563,7 +563,7 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchUserId = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/customer/profile/${username}`);
+        const response = await fetch(`${config.API_IP}/customer/profile/${username}`);
         if (response.ok) {
           const data = await response.json();
           setUserId(data.id);
@@ -593,7 +593,7 @@ const ProductDetail = () => {
 
     try {
       // Using query params POST with empty body as per your backend needs
-      const url = `http://127.0.0.1:8000/create_order?product_name=${encodeURIComponent(product.name)}&quantity=${quantity}&user_id=${userId}`;
+      const url = `${config.API_IP}/create_order?product_name=${encodeURIComponent(product.name)}&quantity=${quantity}&user_id=${userId}`;
 
       console.log('Sending POST request with URL:', url);
 

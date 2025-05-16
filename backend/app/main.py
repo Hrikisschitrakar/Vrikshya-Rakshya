@@ -104,7 +104,7 @@ def verify_access_token(token: str):
         return None
 
 # Load the trained model
-model = load_model('/Users/hrikisschitrakar/Desktop/vrik/backend/model/plant_disease_model.h5')
+model = load_model('/Users/hrikisschitrakar/Desktop/model/plant_disease_model.h5')
 
 # Define class labels
 class_labels = [

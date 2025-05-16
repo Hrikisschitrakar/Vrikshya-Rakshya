@@ -1,5 +1,0 @@
-fastapi
-pymongo
-uvicorn
-python-dotenv
-passlib[bcrypt]

@@ -18,8 +18,6 @@ class Orders(Base):
     transaction_id = Column(String, nullable=True)  # New field to store the transaction ID from payment
 
 
-
-
 class Users(Base):
     __tablename__ = 'users'  # Ensure this matches the actual table name in the database
     __table_args__ = {'extend_existing': True} 
