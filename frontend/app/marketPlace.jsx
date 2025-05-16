@@ -138,7 +138,7 @@ const Marketplace = () => {
         <Text style={styles.locationText}>{item.vendorLocation}</Text>
         <Text style={styles.detailsText} numberOfLines={2}>{item.details}</Text>
         <View style={styles.bottomRow}>
-          <Text style={styles.priceText}>${item.price.toFixed(2)}</Text>
+          <Text style={styles.priceText}>Rs.{item.price.toFixed(2)}</Text>
         </View>
         <Text style={[
           styles.availabilityText,
@@ -200,7 +200,7 @@ const Marketplace = () => {
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search vendors, products, or remedies..."
+          placeholder="Search vendors or products"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -217,7 +217,7 @@ const Marketplace = () => {
       <View style={styles.tabsContainer}>
         {renderTabButton('Vendors', 'storefront-outline')}
         {renderTabButton('Products', 'cube-outline')}
-        {renderTabButton('Remedies', 'medkit-outline')}
+        {/* {renderTabButton('Remedies', 'medkit-outline')} */}
       </View>
       
       <View style={styles.resultsContainer}>

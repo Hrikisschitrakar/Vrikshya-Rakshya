@@ -1,12 +1,97 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { ArrowLeft, Package, MapPin, ShoppingCart } from 'lucide-react-native';
 import { useRoute } from '@react-navigation/native';
+import { WebView } from 'react-native-webview'; // Import WebView
 
 const ProductDetail = () => {
   const route = useRoute(); // Access the route object
   const { productData: product } = route.params; // Retrieve product data from route params
   const { username } = route.params; // Retrieve username from route params
+
+  const [userId, setUserId] = useState(null); // State to store user ID
+  const [quantity, setQuantity] = useState(1); // State for product quantity
+  const [webViewUrl, setWebViewUrl] = useState(null); // State for WebView URL
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/customer/profile/${username}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUserId(data.id); // Assuming the response contains the user ID as `id`
+        } else {
+          console.error('Failed to fetch user ID');
+        }
+      } catch (error) {
+        console.error('Error fetching user ID:', error);
+      }
+    };
+
+    fetchUserId();
+  }, [username]);
+
+  const handleIncrease = () => {
+    if (quantity < product.stock) {
+      setQuantity(quantity + 1);
+    }
+  };
+
+  const handleDecrease = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!userId) {
+      Alert.alert('Error', 'User ID not loaded yet. Please try again.');
+      return;
+    }
+
+    try {
+      const requestData = {
+        product_name: product.name,
+        quantity: parseInt(quantity, 10), // Ensure quantity is an integer
+        user_id: parseInt(userId, 10), // Ensure user_id is an integer
+      };
+
+      console.log('Sending order creation request with data:', requestData);
+
+      const response = await fetch('http://127.0.0.1:8000/create_order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData), // Ensure the body is properly stringified
+      });
+
+      console.log('Order creation response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Order creation response data:', data);
+
+        if (data.payment_url) {
+          setWebViewUrl(data.payment_url); // Set the payment URL returned by the backend
+        } else {
+          Alert.alert('Error', 'Failed to retrieve payment URL.');
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Order creation error response:', errorData);
+        Alert.alert('Error', errorData.detail || 'Failed to create order. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  };
+
+  if (webViewUrl) {
+    return <WebView source={{ uri: webViewUrl }} style={{ flex: 1 }} />;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -24,7 +109,8 @@ const ProductDetail = () => {
           <Text style={styles.productName}>{product.name}</Text>
           <Text style={styles.price}>${product.price.toFixed(2)}</Text>
           <Text style={styles.description}>{product.description}</Text>
-          <Text style={styles.description}>username: {username}</Text>
+          <Text style={styles.description}>Username: {username}</Text>
+          <Text style={styles.description}>User ID: {userId || 'Loading...'}</Text>
           <View style={styles.stockContainer}>
             <Package color="#4CAF50" size={18} />
             <Text 
@@ -48,12 +134,32 @@ const ProductDetail = () => {
             </View>
           </View>
 
+          {/* Quantity Counter */}
+          <View style={styles.counterContainer}>
+            <TouchableOpacity
+              style={[styles.counterButton, quantity === 1 && styles.disabledButton]}
+              onPress={handleDecrease}
+              disabled={quantity === 1}
+            >
+              <Text style={styles.counterButtonText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.counterText}>{quantity}</Text>
+            <TouchableOpacity
+              style={[styles.counterButton, quantity === product.stock && styles.disabledButton]}
+              onPress={handleIncrease}
+              disabled={quantity === product.stock}
+            >
+              <Text style={styles.counterButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Add to Cart Button */}
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleBuyNow}>
             <ShoppingCart color="#FFFFFF" size={20} />
             <Text style={styles.buttonText}>Buy Now!!</Text>
           </TouchableOpacity>
 
+          {/* Wishlist Button */}
           <TouchableOpacity 
             style={styles.wishlistButton}
             onPress={async () => {
@@ -197,6 +303,31 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 16,
     fontWeight: '600',
+  },
+  counterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  counterButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 4,
+    padding: 10,
+    marginHorizontal: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#A5D6A7', // Lighter green for disabled buttons
+  },
+  counterButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  counterText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#424242',
   },
 });
 

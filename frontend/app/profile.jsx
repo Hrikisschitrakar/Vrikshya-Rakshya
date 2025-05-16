@@ -1,3 +1,8 @@
+import { LogBox } from 'react-native';
+
+// Ignore specific warning related to unwrapped text
+LogBox.ignoreLogs(['Text strings must be rendered within a <Text> component.']);
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -66,6 +71,8 @@ const CustomerProfileScreen = () => {
 
   const [isOrdersModalVisible, setIsOrdersModalVisible] = useState(false);
   const [isWishlistModalVisible, setIsWishlistModalVisible] = useState(false);
+  const [isRemediesModalVisible, setIsRemediesModalVisible] = useState(false);
+  const [savedRemedies, setSavedRemedies] = useState([]);
 
   const [orderHistory, setOrderHistory] = useState([]); // State to store order history
   const [wishlistData, setWishlistData] = useState([]); // State to store wishlist data
@@ -98,6 +105,20 @@ const CustomerProfileScreen = () => {
     }
   };
 
+  const fetchSavedRemedies = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/saved-remedies/${username}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSavedRemedies(Array.isArray(data) ? data : [data]); // Ensure data is an array
+      } else {
+        console.error('Failed to fetch saved remedies');
+      }
+    } catch (error) {
+      console.error('Error fetching saved remedies:', error);
+    }
+  };
+
   useEffect(() => {
     if (isOrdersModalVisible) {
       fetchOrderHistory();
@@ -109,6 +130,12 @@ const CustomerProfileScreen = () => {
       fetchWishlist();
     }
   }, [isWishlistModalVisible]);
+
+  useEffect(() => {
+    if (isRemediesModalVisible) {
+      fetchSavedRemedies();
+    }
+  }, [isRemediesModalVisible]);
 
   // Mock data
   const orders = [
@@ -159,16 +186,38 @@ const CustomerProfileScreen = () => {
     },
   ];
 
-  const handleEditSubmit = () => {
-    setCustomer({
-      ...customer,
-      name: editForm.name,
-      address: editForm.address,
-      phone: editForm.phone,
-      email: editForm.email,
-    });
-    setIsEditModalVisible(false);
-    Alert.alert('Success', 'Profile updated successfully.');
+  const handleEditSubmit = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/customer/profile/${customer.username}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: editForm.email,
+          home_address: editForm.address,
+          phone_number: editForm.phone,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedCustomer = await response.json();
+        setCustomer((prev) => ({
+          ...prev,
+          email: updatedCustomer.email,
+          address: updatedCustomer.home_address,
+          phone: updatedCustomer.phone_number,
+        }));
+        setIsEditModalVisible(false);
+        Alert.alert('Success', 'Profile updated successfully.');
+      } else {
+        console.error('Failed to update profile');
+        Alert.alert('Error', 'Failed to update profile.');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'An error occurred while updating the profile.');
+    }
   };
 
   const handlePickImage = async () => {
@@ -246,8 +295,8 @@ const CustomerProfileScreen = () => {
           const data = await response.json();
           setCustomer((prev) => ({
             ...prev,
-            profileImage: data.image_url, // Update profile image
-            coverImage: data.image_url,  // Set cover image the same as profile image
+            profileImage: `http://127.0.0.1:8000${data.image_url}`,
+            coverImage: `http://127.0.0.1:8000${data.image_url}`,
           }));
         } else {
           console.error('Failed to fetch profile data');
@@ -409,9 +458,12 @@ const CustomerProfileScreen = () => {
             <ChevronRight color="#1B5E20" size={20} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={() => setIsRemediesModalVisible(true)}
+          >
             <CreditCard color="#1B5E20" size={20} />
-            <Text style={styles.menuItemText}>Payment Methods</Text>
+            <Text style={styles.menuItemText}>Saved Remedies</Text>
             <ChevronRight color="#1B5E20" size={20} />
           </TouchableOpacity>
 
@@ -522,40 +574,17 @@ const CustomerProfileScreen = () => {
               <Text style={styles.modalTitle}>Order History</Text>
               <ScrollView>
                 {orderHistory.map((order, index) => (
-                  <View key={index} style={styles.orderItem}>
-                    <View style={styles.orderHeader}>
-                      <Text style={styles.orderId}>Order ID: {order.id}</Text>
-                      <Text style={[
-                        styles.orderStatus,
-                        { color: order.order_status === 'delivered' ? '#10B981' : '#F59E0B' }
-                      ]}>
-                        {order.order_status}
-                      </Text>
-                    </View>
-                    <View style={styles.orderDetail}>
-                      <Text style={styles.orderLabel}>Product:</Text>
-                      <Text style={styles.orderValue}>{order.product_name}</Text>
-                    </View>
-                    <View style={styles.orderDetail}>
-                      <Text style={styles.orderLabel}>Quantity:</Text>
-                      <Text style={styles.orderValue}>{order.quantity}</Text>
-                    </View>
-                    <View style={styles.orderDetail}>
-                      <Text style={styles.orderLabel}>Total Price:</Text>
-                      <Text style={styles.orderValue}>₹{order.total_price}</Text>
-                    </View>
-                    <View style={styles.orderDetail}>
-                      <Text style={styles.orderLabel}>Address:</Text>
-                      <Text style={styles.orderValue}>{order.address}</Text>
-                    </View>
-                    <View style={styles.orderDetail}>
-                      <Text style={styles.orderLabel}>Date:</Text>
-                      <Text style={styles.orderValue}>
-                        {new Date(order.created_at).toLocaleDateString('en-US', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                  <View key={index} style={styles.orderBox}> {/* Added box system */}
+                    {/* <Image
+                      source={{ uri: `http://127.0.0.1:8000${order.product_image_url}` }}
+                      style={styles.wishlistItemImage} // Reusing wishlist image styling
+                    /> */}
+                    <View style={styles.wishlistItemDetails}>
+                      <Text style={styles.wishlistItemName}>{order.product_name}</Text>
+                      <Text style={styles.wishlistItemDescription}>Quantity: {order.quantity}</Text>
+                      <Text style={styles.wishlistItemPrice}>₹{order.total_price}</Text>
+                      <Text style={styles.wishlistItemStock}>
+                        {order.order_status === 'delivered' ? 'Delivered' : 'In Progress'}
                       </Text>
                     </View>
                   </View>
@@ -591,7 +620,7 @@ const CustomerProfileScreen = () => {
                     <View style={styles.wishlistItemDetails}>
                       <Text style={styles.wishlistItemName}>{item.product_name}</Text>
                       <Text style={styles.wishlistItemDescription}>{item.product_description}</Text>
-                      <Text style={styles.wishlistItemPrice}>₹{item.product_price}</Text>
+                      <Text style={styles.wishlistItemPrice}>Rs. {item.product_price}</Text>
                       <Text style={styles.wishlistItemStock}>
                         {item.product_stock > 0 ? 'In Stock' : 'Out of Stock'}
                       </Text>
@@ -604,6 +633,43 @@ const CustomerProfileScreen = () => {
                 onPress={() => setIsWishlistModalVisible(false)}
               >
                 <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Remedies Modal */}
+        <Modal
+          visible={isRemediesModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsRemediesModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Saved Remedies</Text>
+              <ScrollView>
+                {savedRemedies.map((remedy, index) => (
+                  <View key={index} style={styles.remedyBox}> {/* Added box system */}
+
+                    <Text style={styles.remedyValue}> Plant Name: {remedy.plant_name}{"\n"}</Text>
+                    <Text style={styles.remedyValue}>Disease Name: {remedy.disease_name}{"\n"}</Text>
+                    <Text style={styles.remedyValue}>Description: {remedy.description}{"\n"}</Text>
+                    <Text style={styles.remedyValue}>Remedies:{remedy.remedies}{"\n"}</Text>
+                    <Text style={styles.remedyValue}>Pesticides/Fertilizers: {remedy.pesticides_fertilizers}{"\n"}</Text>
+                    <Text style={styles.remedyValue}>Date: {new Date(remedy.created_at).toLocaleDateString('en-US', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}{"\n"}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsRemediesModalVisible(false)}
+              >
+                <Text style={styles.closeButton}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -773,22 +839,24 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20, // Slightly larger font size
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 15, // Increased spacing
     color: '#1B5E20', // Dark green
+    textAlign: 'center', // Center align the title
   },
   saveButton: {
-    backgroundColor: '#A5D6A7', // Light green
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#C8E6C9', // Light green
+    padding: 12, // Increased padding
+    borderRadius: 8, // Rounded corners
     flex: 1,
-    marginLeft: 5,
+    marginLeft: 10, // Spacing between buttons
     alignItems: 'center',
   },
   saveButtonText: {
-    color: '#1B5E20', // Dark green
+    color: '#388E3C', // Dark green
     fontWeight: 'bold',
+    fontSize: 16, // Slightly larger font size
   },
   viewDetailsButton: {
     alignSelf: 'flex-end',
@@ -817,20 +885,51 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center', // Center vertically
-    alignItems: 'center', // Center horizontally
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   modalContent: {
     width: '90%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    borderRadius: 15, // Rounded corners
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20, // Add spacing above buttons
+  },
+  cancelButton: {
+    backgroundColor: '#FFCDD2', // Light red
+    padding: 12, // Increased padding
+    borderRadius: 8, // Rounded corners
+    flex: 1,
+    marginRight: 10, // Spacing between buttons
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#D32F2F', // Dark red
+    fontWeight: 'bold',
+    fontSize: 16, // Slightly larger font size
+  },
+  saveButton: {
+    backgroundColor: '#C8E6C9', // Light green
+    padding: 12, // Increased padding
+    borderRadius: 8, // Rounded corners
+    flex: 1,
+    marginLeft: 10, // Spacing between buttons
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#388E3C', // Dark green
+    fontWeight: 'bold',
+    fontSize: 16, // Slightly larger font size
   },
   wishlistItem: {
     flexDirection: 'row',
@@ -868,6 +967,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4B8B3B',
     marginTop: 4,
+  },
+  closeButton: {
+    alignSelf: 'center', // Center the button horizontally
+    marginTop: -50, // Add some margin to position it higher
+    backgroundColor: '#A5D6A7', // Light green
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  orderBox: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  remedyBox: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  remedyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  remedyLabel: {
+    fontWeight: 'bold',
+    color: '#1B5E20',
+  },
+  remedyValue: {
+    color: '#4B8B3B',
   },
 });
 

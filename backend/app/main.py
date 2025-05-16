@@ -49,15 +49,19 @@ from app.schemas.profile import ProfileOut
 from app.models.profile import Profile
 app = FastAPI(title="Vrikshya Rakshya Backend")
 import os
+import requests
 from app.models.profile import Profile  # Assuming you have the Profile model
 from app.schemas.profile import ProfileOut
 from app.models.review import Review
 from app.schemas.review import ReviewCreate, ReviewOut
 from pydantic import BaseModel
 import httpx
-
+from fastapi import FastAPI, HTTPException, Depends
+from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import aliased
 from sqlalchemy import func
+from app.models.payment import Orders, Users
 # Mount the static directory to serve images
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -1182,3 +1186,117 @@ async def get_customer_profile(username: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Customer profile not found")
 
     return customer_profile
+
+
+@app.get("/products_by_name/search")
+async def search_products_by_name(
+    db: Session = Depends(get_db),
+    search_term: str = Query(..., description="Search term to match product name")
+):
+    # Query the database for products whose names contain the search term (case insensitive)
+    products = db.query(Product).filter(Product.name.ilike(f"%{search_term}%")).all()
+
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found matching the search term")
+
+    # Return the list of matching products
+    return products
+
+
+KHALTI_SECRET_KEY = '9e7be065e8d244fbba92f2a6f1580b39'
+KHALTI_INITIATE_URL = 'https://dev.khalti.com/api/v2/epayment/initiate/'
+
+
+@app.post("/create_order")
+async def create_order(product_name: str, quantity: int, user_id: int, db: Session = Depends(get_db)):
+    # Fetch product from the database using product_name
+    product = db.query(Product).filter(Product.name == product_name).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Fetch user details from the database
+    user = db.query(Users).filter(Users.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Calculate total price
+    total_price = product.price * quantity
+
+    # Create an order in the database
+    order = Orders(
+        user_id=user_id,
+        product_id=product.id,  # Store product_id in the order
+        quantity=quantity,
+        total_price=total_price,
+        payment_status=False,
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    # Prepare Khalti payload
+    payload = {
+        "return_url": f"http://127.0.0.1:8000/payment_callback?pidx={order.id}",
+        "website_url": "http://127.0.0.1:8000",
+        "amount": total_price * 100,  # Convert to paisa (if applicable)
+        "purchase_order_id": str(order.id),
+        "purchase_order_name": f"Plant Medicine Purchase: {product_name}",
+        "customer_info": {
+            "name": user.username,  # Fetch the user's name from the database
+            "email": user.email,  # Fetch the user's email from the database
+        }
+    }
+
+    headers = {
+        "Authorization": f"Key {KHALTI_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Send payment initiation request to Khalti API
+        response = requests.post(KHALTI_INITIATE_URL, json=payload, headers=headers)
+        response_data = response.json()
+
+        if response.status_code == 200 and 'payment_url' in response_data:
+            return JSONResponse(content={"payment_url": response_data['payment_url']})
+
+        else:
+            raise HTTPException(status_code=500, detail="Failed to initiate payment.")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
+@app.get("/payment_callback")
+async def payment_callback(
+    pidx: str,
+    transaction_id: str,
+    amount: int,
+    total_amount: int,
+    status: str,
+    purchase_order_id: int,
+    purchase_order_name: str,
+    db: Session = Depends(get_db)
+):
+    # Verify the payment status
+    if status != 'Completed':
+        raise HTTPException(status_code=400, detail="Payment was not successful.")
+
+    # Fetch the order from the database using the purchase_order_id (pidx)
+    order = db.query(Orders).filter(Orders.id == purchase_order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+
+    # Update the order with payment confirmation details
+    order.payment_status = True  # Mark as paid
+    order.payment_url = f"https://www.khalti.com/checkout/{transaction_id}"  # Store payment URL if needed
+    order.transaction_id = transaction_id  # Store the transaction ID for tracking purposes
+
+    # Commit the changes to the database
+    db.commit()
+
+    # Return a success response
+    return {"message": "Payment confirmed and order updated.", "order_id": order.id, "status": "Completed"}

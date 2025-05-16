@@ -159,10 +159,10 @@ const Login = () => {
                 </Text>
               </Pressable>
               <Pressable onPress={() => setShowWebView(true)} style={styles.iconContainer}>
-                {/* <Icon name="globe" size={20} color="#397454" style={styles.icon} /> */}
-                {/* <Text style={[styles.footerText, { color: "#397454", fontWeight: "bold" }]}>
+                 <Icon name="globe" size={20} color="#397454" style={styles.icon} /> 
+                 <Text style={[styles.footerText, { color: "#397454", fontWeight: "bold" }]}>
                   Open Browser
-                </Text> */}
+                </Text> 
               </Pressable>
             </View>
           </View>

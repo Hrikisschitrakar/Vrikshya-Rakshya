@@ -298,7 +298,7 @@ const VendorProfileScreen = () => {
 
             <View style={styles.statItem}>
               <Calendar color="#4CAF50" size={24} />
-              <Text style={styles.statValue}>₹{statistics.totalRevenue}</Text>
+              <Text style={styles.statValue}>Rs. {statistics.totalRevenue}</Text>
               <Text style={styles.statLabel}>Revenue</Text>
             </View>
           </View>

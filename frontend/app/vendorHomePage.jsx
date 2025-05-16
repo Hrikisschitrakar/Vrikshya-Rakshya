@@ -283,7 +283,7 @@ const VendorHomePage = () => {
       {/* Quick Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>₹{stats.total_revenue}</Text>
+          <Text style={styles.statValue}>Rs.{stats.total_revenue}</Text>
           <Text style={styles.statLabel}>Today's Sales</Text>
         </View>
         <View style={styles.statCard}>
@@ -426,7 +426,7 @@ const VendorHomePage = () => {
               <View style={styles.productInfo}>
                 <Text style={styles.productName}>{product.name}</Text>
                 <Text style={styles.productCategory}>id: {product.id}</Text>
-                <Text style={styles.productPrice}>₹{product.price}</Text>
+                <Text style={styles.productPrice}>Rs. {product.price}</Text>
                 <Text style={styles.productPrice}>{product.description}</Text>
               </View>
             </View>
@@ -609,7 +609,7 @@ const VendorHomePage = () => {
             onPress={() => setIsPriceModalVisible(true)}
           >
             <View style={[styles.actionIcon, styles.orangeAction]}>
-              <Text style={styles.actionIconText}>$</Text>
+              <Text style={styles.actionIconText}>Rs</Text> {/* Changed icon from $ to Rs */}
             </View>
             <Text style={styles.actionText}>Update Prices</Text>
           </TouchableOpacity>

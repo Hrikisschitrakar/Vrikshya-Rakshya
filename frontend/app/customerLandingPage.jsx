@@ -55,15 +55,20 @@ const CustomerLandingPage = () => {
         vendor: product.vendor_name,
         stock: product.stock, // Include stock information
       }));
-      
-      setProducts(productsData);
+
+      // Select 5 random products
+      const randomProducts = productsData.sort(() => 0.5 - Math.random()).slice(0, 5);
+      setProducts(randomProducts);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching products:', error);
       setLoading(false);
     }
   };
-
+  if (__DEV__) {
+    console.disableYellowBox = true; // Disable yellow box warnings
+  }
+  
   const takePicture = async () => {
     if (!hasPermission) {
       alert('Camera permission is required');
