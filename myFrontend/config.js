@@ -1,5 +1,5 @@
 const config = {
-    API_IP: "http://192.168.18.128:8000"
+    API_IP: "https://0686-111-119-44-45.ngrok-free.app"
   };
 
   export default config;
