@@ -26,7 +26,7 @@ const Index = () => {
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <Text>Index Screen</Text>
       {/* Navigate to the Welcome Page */}
-      <Button title="Go to Welcome" onPress={() => router.push("/welcome")} />
+      <Button title="Go to Welcome" onPress={() => router.push("/welcome")} /> 
     </View>
   );
 };

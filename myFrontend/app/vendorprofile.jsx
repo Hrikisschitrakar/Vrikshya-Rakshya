@@ -114,7 +114,19 @@ const VendorProfileScreen = () => {
 
   const handleImageUpload = async () => {
     try {
-      await axios.post(`${config.API_IP}/profile`, imageForm);
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('image', {
+        uri: imageForm.image_url,
+        type: 'image/jpeg', // Adjust the type based on the image format
+        name: 'profile.jpg',
+      });
+
+      await axios.put(`${config.API_IP}/profile/${username}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setVendor((prevVendor) => ({
         ...prevVendor,
         profileImage: imageForm.image_url,

@@ -274,7 +274,7 @@ const VendorHomePage = () => {
       <View style={styles.welcomeBanner}>
         <View>
           <Text style={styles.welcomeText}>Welcome back, {username}!</Text>
-          <Text style={styles.subText}>Here&apos;s what's happening with your store today</Text>
+          <Text style={styles.subText}>Here&apos;s what&apos;s happening with your store today</Text>
         </View>
         {/* <View style={styles.badgeContainer}>
           <Text style={styles.badge}>12 New Orders</Text>
@@ -329,11 +329,13 @@ const VendorHomePage = () => {
                 <Text style={styles.orderId}>Product: {order.product_name}</Text>
                 <Text style={styles.orderCustomer}>Customer: {order.full_name}</Text>
                 <Text style={styles.orderAddress}>Address: {order.vendor_address}</Text>
+                <Text style={styles.orderQuantity}>Quantity: {order.quantity}</Text>
+                <Text style={styles.orderDate}>{new Date(order.created_at).toLocaleDateString()}</Text>
               </View>
               <View>
-                <Text style={styles.orderQuantity}>Quantity: {order.quantity}</Text>
+                
                 <Text style={styles.orderStatus}>Status: {order.order_status}</Text>
-                <Text style={styles.orderDate}>{new Date(order.created_at).toLocaleDateString()}</Text>
+                
               </View>
             </View>
           </View>
@@ -349,6 +351,12 @@ const VendorHomePage = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsOrdersModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
             <Text style={styles.modalTitle}>All Orders</Text>
             <ScrollView>
               {recentOrders.map((order, index) => (
@@ -356,15 +364,36 @@ const VendorHomePage = () => {
                   <View style={styles.orderMain}>
                     <View>
                       <Text style={styles.orderId}>Product: {order.product_name}</Text>
+                      <Text style={styles.orderProduct}>Order ID: {order.order_id}</Text>
                       <Text style={styles.orderCustomer}>Customer: {order.full_name}</Text>
                       <Text style={styles.orderAddress}>Address: {order.vendor_address}</Text>
+                      <Text style={styles.orderQuantity}>Quantity: {order.quantity}</Text>
+                      <Text style={styles.orderQuantity}>Amount: Rs.{order.total_price}</Text>
+
                     </View>
                     <View>
-                      <Text style={styles.orderQuantity}>Quantity: {order.quantity}</Text>
+                      
                       <Text style={styles.orderStatus}>Status: {order.order_status}</Text>
                       <Text style={styles.orderDate}>{new Date(order.created_at).toLocaleDateString()}</Text>
                     </View>
                   </View>
+
+                  {/* Deliver Order Button */}
+                  <TouchableOpacity
+                    style={styles.deliverButton}
+                    onPress={async () => {
+                      try {
+                        await axios.put(`${config.API_IP}/orders/update-status/${order.order_id}?status=Delivered`);
+                        Alert.alert('Success', 'Order status updated to Delivered.');
+                        fetchRecentOrders(); // Refresh orders list
+                      } catch (error) {
+                        console.error('Error updating order status:', error.response?.data || error.message);
+                        Alert.alert('Error', 'Failed to update order status.');
+                      }
+                    }}
+                  >
+                    <Text style={styles.deliverButtonText}>Deliver Order</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
             </ScrollView>
@@ -806,9 +835,21 @@ const styles = StyleSheet.create({
     color: '#4caf50',
   },
   orderCard: {
-    marginVertical: 4,
-    paddingVertical: 8,
+    marginTop: 24,   // adds space above each order card
+    marginBottom: 8,
+    marginVertical: 8,        // increased vertical margin for spacing
+    paddingVertical: 16,      // doubled padding for bigger box
+    paddingHorizontal: 12,    // added horizontal padding for width comfort
+    minHeight: 80,            // ensures minimum height for consistent sizing
+    borderRadius: 8,          // optional: add some rounding to soften the box edges
+    backgroundColor: '#fafafa', // optional: subtle background color for emphasis
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
+  
   orderCardBorder: {
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -1037,9 +1078,10 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Align modal to start
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingTop: 50, // Add padding to bring it lower
   },
   modalContent: {
     width: '90%',
@@ -1051,6 +1093,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    position: 'relative', // Ensure the close button is positioned relative to this container
+    paddingTop: 40, // Add padding to avoid overlap with the close button
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 30, // Adjusted to ensure visibilityts
+    right: 15,
+    backgroundColor: '#e8f5e9',
+    borderRadius: 20,
+    padding: 5,
+    elevation: 3,
+    zIndex: 10, // Ensure the button appears above other elements
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2e7d32',
   },
   modalTitle: {
     fontSize: 18,
@@ -1090,6 +1149,18 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginBottom: 10,
     textAlign: 'center',
+  },
+  deliverButton: {
+    backgroundColor: '#4caf50',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  deliverButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
 });
 

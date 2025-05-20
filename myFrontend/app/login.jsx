@@ -77,6 +77,8 @@ const Login = () => {
           router.push({ pathname: "vendorHomePage", params: { username: usernameRef.current } }); // Pass username
         } else if (response.data.role === "customer") {
           router.push({ pathname: "customerLandingPage", params: { username: usernameRef.current } }); // Pass username
+        } else if (response.data.role === "admin") {
+          router.push({ pathname: "admin", params: { username: usernameRef.current } }); // Pass username
         } else {
           Alert.alert("Login Failed", "Invalid user role.");
         }
@@ -165,12 +167,12 @@ const Login = () => {
                   Sign Up Now
                 </Text>
               </Pressable>
-              <Pressable onPress={() => setShowWebView(true)} style={styles.iconContainer}>
+              {/* <Pressable onPress={() => setShowWebView(true)} style={styles.iconContainer}>
                  <Icon name="globe" size={20} color="#397454" style={styles.icon} /> 
                  <Text style={[styles.footerText, { color: "#397454", fontWeight: "bold" }]}>
                   Open Browser
                 </Text> 
-              </Pressable>
+              </Pressable> */}
             </View>
           </View>
         </View>

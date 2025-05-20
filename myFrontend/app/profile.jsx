@@ -918,19 +918,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16, // Slightly larger font size
   },
-  saveButton: {
-    backgroundColor: '#C8E6C9', // Light green
-    padding: 12, // Increased padding
-    borderRadius: 8, // Rounded corners
-    flex: 1,
-    marginLeft: 10, // Spacing between buttons
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#388E3C', // Dark green
-    fontWeight: 'bold',
-    fontSize: 16, // Slightly larger font size
-  },
+  // saveButton: {
+  //   backgroundColor: '#C8E6C9', // Light green
+  //   padding: 12, // Increased padding
+  //   borderRadius: 8, // Rounded corners
+  //   flex: 1,
+  //   marginLeft: 10, // Spacing between buttons
+  //   alignItems: 'center',
+  // },
+  // saveButtonText: {
+  //   color: '#388E3C', // Dark green
+  //   fontWeight: 'bold',
+  //   fontSize: 16, // Slightly larger font size
+  // },
   wishlistItem: {
     flexDirection: 'row',
     marginBottom: 16,

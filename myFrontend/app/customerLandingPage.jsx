@@ -38,14 +38,18 @@ const CustomerLandingPage = () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
       
-      // Fetch product data
-      fetchProducts();
+      // Fetch product data with an empty string or default value initially
+      fetchProducts('');
     })();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (query) => {
     try {
-      const response = await axios.get(`${config.API_IP}/products/`);
+      // Encode the query and replace '+' with '%20'
+      const encodedQuery = encodeURIComponent(query).replace(/\+/g, '%20');
+      const response = await axios.get(`${config.API_IP}/products_by_name/{search}`, {
+        params: { search_term: encodedQuery },
+      });
       const productsData = response.data.map(product => ({
         id: product.id.toString(),
         name: product.name,
@@ -216,28 +220,32 @@ const CustomerLandingPage = () => {
       const response = await axios.post(
         `${config.API_IP}/save-remedy?username=${encodeURIComponent(username)}&disease_name=${encodeURIComponent(diseaseName)}`
       );
-  
+
       if (response.status === 200) {
         const { plant_name, description, remedies, pesticides_fertilizers } = response.data;
-  
-        console.log('Remedy Details:', {
-          plant_name,
-          description,
-          remedies,
-          pesticides_fertilizers,
-        });
-  
+
+        // Store remedy details in variables
+        const plantName = plant_name;
+        const diseaseDescription = description;
+        const remedyList = remedies;
+        const pesticidesAndFertilizers = pesticides_fertilizers;
+
+        console.log('Pesticides and Fertilizers:', pesticidesAndFertilizers);
+
+        // Fetch products based on pesticidesAndFertilizers
+        fetchProducts(pesticidesAndFertilizers); // Pass directly without encoding
+
         Alert.alert(
           'Remedy Details',
-          `\nPlant Name: ${plant_name}\n` +
+          `\nPlant Name: ${plantName}\n` +
           '\n' +
           `Disease: ${diseaseName}\n` +
           '\n' +
-          `Description: ${description}\n` +
+          `Description: ${diseaseDescription}\n` +
           '\n' +
-          `Remedies: ${remedies}\n` +
+          `Remedies: ${remedyList}\n` +
           '\n' +
-          `Pesticides/Fertilizers: ${pesticides_fertilizers}`,
+          `Pesticides/Fertilizers: ${pesticidesAndFertilizers}`,
           [{ text: 'OK' }],
           { cancelable: true }
         );
