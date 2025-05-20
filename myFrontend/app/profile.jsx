@@ -261,6 +261,31 @@ const CustomerProfileScreen = () => {
     ]);
   };
 
+  const handleCancelOrder = async (orderId) => {
+    try {
+      const response = await fetch(`${config.API_IP}/orders/update-status/${orderId}?status=Cancelled`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: customer.username,
+        }),
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Order cancelled successfully.');
+        fetchOrderHistory(); // Refresh order history
+      } else {
+        console.error('Failed to cancel order');
+        Alert.alert('Error', 'Failed to cancel order.');
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      Alert.alert('Error', 'An error occurred while cancelling the order.');
+    }
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -581,11 +606,18 @@ const CustomerProfileScreen = () => {
                     /> */}
                     <View style={styles.wishlistItemDetails}>
                       <Text style={styles.wishlistItemName}>{order.product_name}</Text>
+                      <Text style={styles.wishlistItemDescription}>Order ID: {order.id}</Text>
                       <Text style={styles.wishlistItemDescription}>Quantity: {order.quantity}</Text>
                       <Text style={styles.wishlistItemPrice}>₹{order.total_price}</Text>
                       <Text style={styles.wishlistItemStock}>
                         {order.order_status === 'delivered' ? 'Delivered' : 'In Progress'}
                       </Text>
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={() => handleCancelOrder(order.id)}
+                      >
+                        <Text style={styles.cancelButtonText}>Cancel Order</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 ))}
