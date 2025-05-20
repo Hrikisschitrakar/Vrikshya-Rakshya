@@ -661,12 +661,14 @@ const CustomerProfileScreen = () => {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric',
+                      
                     })}{"\n"}</Text>
+                    <Text style={styles.remedyValue}>-------------------------------------------------{"\n"}</Text>
                   </View>
                 ))}
               </ScrollView>
               <TouchableOpacity
-                style={styles.closeButton}
+                // style={styles.closeButton}
                 onPress={() => setIsRemediesModalVisible(false)}
               >
                 <Text style={styles.closeButton}>Close</Text>
@@ -890,6 +892,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   modalContent: {
+    marginTop: 120,
     width: '90%',
     backgroundColor: '#FFFFFF',
     borderRadius: 15, // Rounded corners
@@ -968,13 +971,26 @@ const styles = StyleSheet.create({
     color: '#4B8B3B',
     marginTop: 4,
   },
+  // closeButton: {
+  //   alignSelf: 'center', // Center the button horizontally
+  //   marginTop: -50, // Add some margin to position it higher
+  //   backgroundColor: '#A5D6A7', // Light green
+  //   padding: 10,
+  //   borderRadius: 5,
+  //   alignItems: 'center',
+  // }
   closeButton: {
-    alignSelf: 'center', // Center the button horizontally
-    marginTop: -50, // Add some margin to position it higher
-    backgroundColor: '#A5D6A7', // Light green
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 2,                       // Positive margin to avoid overlap
+    marginBottom: 50,                   // Space from bottom of modal
+    backgroundColor: '#4CAF50',         // Consistent green shade (Material Design)
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 25,                   // Rounded pill-like shape
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,                       // Android elevation
   },
   orderBox: {
     flexDirection: 'row',
@@ -987,19 +1003,25 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-  },
-  remedyBox: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    padding: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
+ remedyBox: {
+
+    flexDirection: 'column',               // Better readability top-to-bottom
+    backgroundColor: '#FFFFFF',           // Clean white card
+    padding: 16,                           // More spacious padding
+    marginHorizontal: 16,                 // Uniform horizontal margins
+    marginBottom: 0,                     // Spacing between cards
+    borderRadius: 12,                     // Softer rounded corners
+    shadowColor: '#000',                  // Subtle shadow for elevation
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,                         // Android elevation
+    borderWidth: 0.5,
+    borderColor: '#E0E0E0',               // Light border to define edges
+  }, },
+ 
+  
+  
   remedyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
