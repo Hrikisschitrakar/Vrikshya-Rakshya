@@ -13,13 +13,13 @@ conf = ConnectionConfig(
     VALIDATE_CERTS=True
 )
 
-async def send_email(to_email: str, subject: str, body: str):
+async def send_email(to_email: str, subject: str, body: str,html: bool = False):
     # Create the email message
     message = MessageSchema(
         subject=subject,
         recipients=[to_email],
         body=body,
-        subtype="plain"
+        subtype="html" if html else "plain"
     )
 
     # Send the email

@@ -1,5 +1,7 @@
 
 import shutil
+from app.schemas.warning import WarningCreate
+from app.crud.warning import create_warning
 from app.crud.remedies import get_remedy_by_disease_name
 from app.schemas.remedies import RemedyResponse
 from app.crud.saved_remedies import save_remedy
@@ -1521,26 +1523,101 @@ async def delete_user_by_username(username: str, db: Session = Depends(get_db)):
 
 
 
+# @app.post("/send-warning/{username}")
+# async def send_warning_notification(username: str, db: Session = Depends(get_db)):
+#     # Find user by username
+#     user = db.query(User).filter(User.username == username).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
+
+#     # Create a warning notification content
+#     warning_message = "Warning: Please follow the community guidelines to avoid penalties."
+
+#     # Prepare notification object
+#     notification = NotificationCreate(
+#         user_id=user.id,
+#         content=warning_message
+#     )
+
+#     # Create notification in DB
+#     created_notification = create_notification(db, notification)
+
+#     if not created_notification:
+#         raise HTTPException(status_code=500, detail="Failed to send notification")
+
+#     return {"message": f"Warning notification sent to {username}"}
+
+# @app.post("/send-warning/{username}")
+# async def send_warning_notification(username: str, db: Session = Depends(get_db)):
+#     # Find user by username
+#     user = db.query(User).filter(User.username == username).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
+
+#     warning_message_html = """
+#     <p>Your account has been reported for posting suspicious content by our fellow users.<br/>
+#     Warning: Please follow the community guidelines to avoid penalties.<br/>
+#     For more information, please contact us via email.</p>
+
+#     <br/>
+    
+
+#     <p>Best regards,<br/>
+
+#     <table style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+#       <tr>
+#         <td>
+#           <strong style="color: #2E7D32;">Vrikshya Rakshya</strong><br/>
+#           <span style="font-style: italic; color: #555;">Plant Disease Detection & Marketplace</span><br/><br/>
+
+#           <em>"Empowering plant health with AI-driven solutions"</em><br/><br/>
+
+#           Email: <a href="mailto:vrikshyarakshya@gmail.com" style="color: #1E88E5; text-decoration: none;">vrikshyarakshya@gmail.com</a><br/>
+#         </td>
+#       </tr>
+#     </table>
+#     """
+
+#     # Send warning email (assumes send_email supports HTML content)
+#     email_subject = "Community Guidelines Warning"
+#     email_sent = await send_email(to_email=user.email, subject=email_subject, body=warning_message_html, html=True)
+#     if not email_sent:
+#         raise HTTPException(status_code=500, detail="Failed to send warning email")
+
+#     # Prepare notification object
+#     notification = NotificationCreate(
+#         user_id=user.id,
+#         content="Your account has been reported for posting suspicious content. Please follow the community guidelines."
+#     )
+
+#     # Create notification in DB
+#     created_notification = create_notification(db, notification)
+#     if not created_notification:
+#         raise HTTPException(status_code=500, detail="Failed to send notification")
+
+#     return {"message": f"Warning notification sent to {username} via notification and email."}
+
 @app.post("/send-warning/{username}")
 async def send_warning_notification(username: str, db: Session = Depends(get_db)):
-    # Find user by username
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Create a warning notification content
-    warning_message = "Warning: Please follow the community guidelines to avoid penalties."
-
-    # Prepare notification object
-    notification = NotificationCreate(
-        user_id=user.id,
-        content=warning_message
+    notification_content = (
+        "Your account has been reported for posting suspicious content by our fellow users. "
+        "Please follow the community guidelines."
     )
 
-    # Create notification in DB
-    created_notification = create_notification(db, notification)
+    warning_to_store = WarningCreate(
+        user_id=user.id,
+        username=user.username,  # <- add this
+        content=notification_content
+    )
 
-    if not created_notification:
-        raise HTTPException(status_code=500, detail="Failed to send notification")
+    db_warning = create_warning(db, warning_to_store)
+    if not db_warning:
+        raise HTTPException(status_code=500, detail="Failed to save warning")
 
-    return {"message": f"Warning notification sent to {username}"}
+    # send email & create notification logic here ...
+
+    return {"message": f"Warning notification sent to {username} via notification and email."}

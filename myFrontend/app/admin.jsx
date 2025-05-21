@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
+import axios from 'axios';
+import config from '../config';
 // Demo Avatar Images (You would replace these with actual user images)
 const getInitialsAvatar = (name) => {
   return name.split(' ').map(part => part[0]).join('').toUpperCase();
@@ -49,12 +50,46 @@ export default function AdminDashboard() {
     { id: 2, userId: 2, userName: 'Jane Smith', message: 'Multiple reports from other users', date: '2025-04-14', status: 'Sent' },
   ]);
 
+  // Fetch users from the server
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+
+        const response = await axios.get(`${config.API_IP}/users/role`);
+        const fetchedUsers = response.data.map(user => ({
+          id: user.id,
+          username: user.username,
+          name: user.full_name,
+          email: user.email,
+          role: user.role,
+          status: user.is_verified ? 'Active' : 'Inactive',
+          joinDate: new Date().toISOString().split('T')[0], // Placeholder join date
+        }));
+        setUsers(fetchedUsers);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
   // Event handlers
-  const handleDeleteUser = (userId) => {
-    setUsers(users.filter(user => user.id !== userId));
-    setPosts(posts.filter(post => post.userId !== userId));
-    setWarnings(warnings.filter(warning => warning.userId !== userId));
-    setShowModal(false);
+  const handleDeleteUser = async (userId) => {
+    try {
+      const userToDelete = users.find(user => user.id === userId);
+      if (!userToDelete || !userToDelete.username) {
+        console.error('Username is undefined or user not found');
+        return;
+      }
+      await axios.delete(`${config.API_IP}/users/${userToDelete.username}`);
+      setUsers(users.filter(user => user.id !== userId));
+      setPosts(posts.filter(post => post.userId !== userId));
+      setWarnings(warnings.filter(warning => warning.userId !== userId));
+      setShowModal(false);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
   };
 
   const handleDeletePost = (postId) => {
@@ -86,7 +121,8 @@ export default function AdminDashboard() {
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredPosts = posts.filter(post => 
@@ -135,6 +171,7 @@ export default function AdminDashboard() {
         <View style={styles.userDetails}>
           <Text style={styles.userName}>{user.name}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
+          <Text style={styles.userUsername}>@{user.username}</Text> {/* Display username */}
           <View style={styles.userMeta}>
             <Text style={[
               styles.statusBadge,
@@ -454,6 +491,11 @@ const styles = StyleSheet.create({
   },
   userEmail: {
     color: '#757575',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  userUsername: {
+    color: '#42a5f5',
     fontSize: 14,
     marginBottom: 4,
   },

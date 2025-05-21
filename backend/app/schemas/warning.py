@@ -1,17 +1,20 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-class NotificationCreate(BaseModel):
+class WarningBase(BaseModel):
     user_id: int
-    content: str
     username: str
+    content: str
 
-class NotificationOut(BaseModel):
+class WarningCreate(WarningBase):
+    pass
+
+class WarningOut(BaseModel):
     id: int
     user_id: int
+    username: str
     content: str
     created_at: datetime
-    read: bool
 
     class Config:
-        from_attributes = True
+        orm_mode = True
