@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert, TextInput } from 'react-native';
 import { Package, MapPin, ShoppingCart, MoreVertical } from 'lucide-react-native';
 import { useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import config from '../config';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 const ProductDetail = () => {
   const route = useRoute();
@@ -15,16 +16,27 @@ const ProductDetail = () => {
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [averageRating, setAverageRating] = useState('Loading...');
   const [rating, setRating] = useState(0);
+  const [comments, setComments] = useState([]); // State to store comments
+  const [newComment, setNewComment] = useState(''); // State for new comment input
 
   useEffect(() => {
     const fetchUserId = async () => {
+      if (!username) {
+        console.error('Username is missing or invalid');
+        return;
+      }
+
       try {
-        const response = await fetch(`${config.API_IP}/customer/profile/${username}`);
+        console.log('Fetching user ID for username:', username); // Debugging log
+        const response = await fetch(`${config.API_IP}/get-user-id?username=${encodeURIComponent(username)}`);
+        console.log('Response status:', response.status); // Debugging log
         if (response.ok) {
           const data = await response.json();
-          setUserId(data.id);
+          console.log('Fetched user ID:', data.user_id); // Debugging log
+          setUserId(data.user_id);
         } else {
-          console.error('Failed to fetch user ID');
+          const errorText = await response.text();
+          console.error(`Failed to fetch user ID: ${response.status} - ${response.statusText}`, errorText);
         }
       } catch (error) {
         console.error('Error fetching user ID:', error);
@@ -46,8 +58,24 @@ const ProductDetail = () => {
       }
     };
 
+    // Ensure comments are fetched and displayed properly
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(`${config.API_IP}/comments/${product.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setComments(data);
+        } else {
+          console.error('Failed to fetch comments:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      }
+    };
+
     fetchUserId();
     fetchAverageRating();
+    fetchComments();
   }, [username, product.id]);
 
   const handleIncrease = () => {
@@ -162,6 +190,41 @@ const ProductDetail = () => {
     );
   };
 
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      Alert.alert('Error', 'Comment cannot be empty.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.API_IP}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_id: product.id, // Ensure product_id is sent
+          user_id: userId, // Ensure user_id is sent
+          content: newComment.trim(), // Corrected field name to 'content'
+        }),
+      });
+
+      if (response.ok) {
+        const commentData = await response.json();
+        setComments([...comments, commentData]);
+        setNewComment('');
+        Alert.alert('Success', 'Comment added successfully!');
+      } else {
+        const errorData = await response.json();
+        console.error('Error adding comment:', errorData);
+        Alert.alert('Error', errorData.detail || 'Failed to add comment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  };
+
   if (paymentUrl) {
     return (
       <WebView
@@ -211,8 +274,8 @@ const ProductDetail = () => {
           <Text style={styles.productName}>{product.name}</Text>
           <Text style={styles.price}>${product.price.toFixed(2)}</Text>
           <Text style={styles.description}>{product.description}</Text>
-          <Text style={styles.description}>Username: {username}</Text>
-          <Text style={styles.description}>User ID: {userId || 'Loading...'}</Text>
+          {/* <Text style={styles.description}>Username: {username}</Text> */}
+          {/* <Text style={styles.description}>User ID: {userId || 'Loading...'}</Text> */}
 
           {/* Display average rating */}
           <View style={styles.ratingContainer}>
@@ -275,6 +338,30 @@ const ProductDetail = () => {
             </View>
             <TouchableOpacity style={styles.submitButton} onPress={handleRateProduct}>
               <Text style={styles.submitButtonText}>Submit Rating</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Comment Section */}
+          <View style={styles.commentSection}>
+            <Text style={styles.commentTitle}>Comments</Text>
+            {comments.length > 0 ? (
+              comments.map((comment, index) => (
+                <View key={index} style={styles.commentItem}>
+                  <Text style={styles.commentAuthor}>{comment.username || 'Anonymous'}</Text> {/* Ensure 'username' field exists */}
+                  <Text style={styles.commentText}>{comment.content || comment.text}</Text> {/* Use 'content' or fallback to 'text' */}
+                </View>
+              ))
+            ) : (
+              <Text style={styles.commentPlaceholder}>No comments yet. Be the first to comment!</Text>
+            )}
+            <TextInput
+              style={styles.commentInput}
+              placeholder="Write a comment..."
+              value={newComment}
+              onChangeText={setNewComment}
+            />
+            <TouchableOpacity style={styles.submitButton} onPress={handleAddComment}>
+              <Text style={styles.submitButtonText}>Add Comment</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -373,6 +460,54 @@ const styles = StyleSheet.create({
   },
   reportButton: {
     padding: -5,
+  },
+  commentSection: {
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+  },
+  commentTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1B5E20',
+    marginBottom: 12,
+  },
+  commentItem: {
+    marginBottom: 12,
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  commentAuthor: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1B5E20',
+  },
+  commentText: {
+    fontSize: 14,
+    color: '#424242',
+    marginTop: 4,
+  },
+  commentPlaceholder: {
+    fontSize: 16,
+    color: '#9E9E9E',
+    textAlign: 'center',
+  },
+  commentInput: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CED4DA',
+    fontSize: 16,
+    color: '#495057',
   },
 });
 

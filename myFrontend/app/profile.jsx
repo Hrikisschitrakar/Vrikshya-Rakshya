@@ -76,6 +76,8 @@ const CustomerProfileScreen = () => {
 
   const [orderHistory, setOrderHistory] = useState([]); // State to store order history
   const [wishlistData, setWishlistData] = useState([]); // State to store wishlist data
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   const fetchOrderHistory = async () => {
     try {
@@ -84,10 +86,10 @@ const CustomerProfileScreen = () => {
         const data = await response.json();
         setOrderHistory(Array.isArray(data) ? data : [data]); // Ensure data is an array
       } else {
-        console.error('Failed to fetch order history');
+       // console.error('Failed to fetch order history');
       }
     } catch (error) {
-      console.error('Error fetching order history:', error);
+      //console.error('Error fetching order history:', error);
     }
   };
 
@@ -98,7 +100,7 @@ const CustomerProfileScreen = () => {
         const data = await response.json();
         setWishlistData(Array.isArray(data) ? data : [data]); // Ensure data is an array
       } else {
-        console.error('Failed to fetch wishlist');
+        //console.error('Failed to fetch wishlist');
       }
     } catch (error) {
       console.error('Error fetching wishlist:', error);
@@ -112,10 +114,10 @@ const CustomerProfileScreen = () => {
         const data = await response.json();
         setSavedRemedies(Array.isArray(data) ? data : [data]); // Ensure data is an array
       } else {
-        console.error('Failed to fetch saved remedies');
+      // console.error('Failed to fetch saved remedies');
       }
     } catch (error) {
-      console.error('Error fetching saved remedies:', error);
+      //console.error('Error fetching saved remedies:', error);
     }
   };
 
@@ -286,6 +288,34 @@ const CustomerProfileScreen = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      const response = await fetch(`${config.API_IP}/customer/delete/${customer.username}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: deletePassword,
+        }),
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Account deleted successfully.');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'login' }],
+        });
+      } else {
+        console.error('Failed to delete account');
+        Alert.alert('Error', 'Failed to delete account. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert('Error', 'An error occurred while deleting the account.');
+    }
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -320,8 +350,8 @@ const CustomerProfileScreen = () => {
           const data = await response.json();
           setCustomer((prev) => ({
             ...prev,
-            profileImage: `${config.API_IP}${data.image_url}`,
-            coverImage: `${config.API_IP}${data.image_url}`,
+            profileImage: "/Users/hrikisschitrakar/Desktop/Vrikshya-Rakshya/myFrontend/assets/images/free-user-icon-3297-thumb.png",
+            coverImage: "/Users/hrikisschitrakar/Desktop/Vrikshya-Rakshya/myFrontend/assets/images/free-user-icon-3297-thumb.png",
           }));
         } else {
           console.error('Failed to fetch profile data');
@@ -368,21 +398,21 @@ const CustomerProfileScreen = () => {
         {/* Cover Image */}
         <View style={styles.coverContainer}>
           <Image source={{ uri: customer.coverImage }} style={styles.coverImage} />
-          <TouchableOpacity style={styles.editCoverButton}>
+          {/* <TouchableOpacity style={styles.editCoverButton}>
             <Edit2 color="#1B5E20" size={16} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
             <Image source={{ uri: customer.profileImage }} style={styles.profileImage} />
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.editProfileButton}
-              onPress={() => setIsImageModalVisible(true)}
+              onPress={() => setIsImageModalVisible(false)}
             >
               <Edit2 color="#1B5E20" size={16} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <View style={styles.nameContainer}>
@@ -492,9 +522,9 @@ const CustomerProfileScreen = () => {
             <ChevronRight color="#1B5E20" size={20} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setIsDeleteModalVisible(true)}>
             <Shield color="#1B5E20" size={20} />
-            <Text style={styles.menuItemText}>Privacy & Security</Text>
+            <Text style={styles.menuItemText}>Delete Account</Text>
             <ChevronRight color="#1B5E20" size={20} />
           </TouchableOpacity>
         </View>
@@ -610,14 +640,16 @@ const CustomerProfileScreen = () => {
                       <Text style={styles.wishlistItemDescription}>Quantity: {order.quantity}</Text>
                       <Text style={styles.wishlistItemPrice}>₹{order.total_price}</Text>
                       <Text style={styles.wishlistItemStock}>
-                        {order.order_status === 'delivered' ? 'Delivered' : 'In Progress'}
+                        {order.order_status === 'delivered' ? 'Delivered' : 'pending'}
                       </Text>
-                      <TouchableOpacity
-                        style={styles.cancelButton}
-                        onPress={() => handleCancelOrder(order.id)}
-                      >
-                        <Text style={styles.cancelButtonText}>Cancel Order</Text>
-                      </TouchableOpacity>
+                      {order.order_status === 'pending' && (
+                        <TouchableOpacity
+                          style={styles.cancelButton}
+                          onPress={() => handleCancelOrder(order.id)}
+                        >
+                          <Text style={styles.cancelButtonText}>Cancel Order</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 ))}
@@ -705,6 +737,46 @@ const CustomerProfileScreen = () => {
               >
                 <Text style={styles.closeButton}>Close</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete Account Modal */}
+        <Modal
+          visible={isDeleteModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsDeleteModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Delete Account</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                value={customer.username}
+                editable={false} // Username is pre-filled and non-editable
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                secureTextEntry={true}
+                onChangeText={(text) => setDeletePassword(text)}
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setIsDeleteModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={handleDeleteAccount}
+                >
+                  <Text style={styles.saveButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>

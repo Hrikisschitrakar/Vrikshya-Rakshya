@@ -91,19 +91,24 @@ const VendorProfileScreen = () => {
   };
 
   const fetchProfileImage = async () => {
-    try {
-      const response = await axios.get(`${config.API_IP}/profile/${username}`);
-      const { image_url } = response.data;
-      setVendor((prevVendor) => ({
-        ...prevVendor,
-        profileImage: `${config.API_IP}${image_url}`, // Update profile image
-        coverImage: `${config.API_IP}${image_url}`,
-      }));
-      // Alert.alert('Success', 'Profile image updated successfully.');
-    } catch (error) {
-      console.error('Error fetching profile image:', error);
-      Alert.alert('Error', 'Failed to fetch profile image.');
-    }
+    // try {
+    //   const response = await axios.get(`${config.API_IP}/profile/${username}`);
+    //   const { image_url } = response.data;
+    //   setVendor((prevVendor) => ({
+    //     ...prevVendor,
+    //     profileImage: `${config.API_IP}${image_url}`, // Update profile image
+    //     coverImage: `${config.API_IP}${image_url}`,
+    //   }));
+    //   // Alert.alert('Success', 'Profile image updated successfully.');
+    // } catch (error) {
+    //   console.error('Error fetching profile image:', error);
+    //   Alert.alert('Error', 'Failed to fetch profile image.');
+    // }
+    setVendor((prevVendor) => ({
+      ...prevVendor,
+      profileImage: "/Users/hrikisschitrakar/Desktop/Vrikshya-Rakshya/myFrontend/assets/images/10.png",
+      coverImage: "/Users/hrikisschitrakar/Desktop/Vrikshya-Rakshya/myFrontend/assets/images/10.png",
+    }));
   };
 
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
@@ -172,7 +177,7 @@ const VendorProfileScreen = () => {
           description: vendorData.description || prevVendor.description,
         }));
       } catch (error) {
-        console.error('Error fetching vendor data:', error);
+        //console.error('Error fetching vendor data:', error);
       }
     };
 
@@ -212,6 +217,34 @@ const VendorProfileScreen = () => {
     }
   };
 
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+
+  const handleDeleteProfile = async () => {
+    try {
+      const response = await axios.delete(`${config.API_IP}/users`, {
+        data: {
+          username: username,
+          password: deletePassword,
+        },
+      });
+
+      if (response.status === 200) {
+        Alert.alert('Success', 'Profile deleted successfully.');
+        setIsDeleteModalVisible(false);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'login' }],
+        });
+      } else {
+        Alert.alert('Error', 'Failed to delete profile. Please try again.');
+      }
+    } catch (error) {
+      //console.error('Error deleting profile:', error);
+      Alert.alert('Error', 'Failed to delete profile. Please check your credentials.');
+    }
+  };
+
   const handleLogout = () => {
     navigation.reset({
       index: 0,
@@ -225,21 +258,12 @@ const VendorProfileScreen = () => {
         {/* Cover Image */}
         <View style={styles.coverContainer}>
           <Image source={{ uri: vendor.coverImage }} style={styles.coverImage} />
-          <TouchableOpacity style={styles.editCoverButton}>
-            <Edit2 color="#FFFFFF" size={16} />
-          </TouchableOpacity>
         </View>
 
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
             <Image source={{ uri: vendor.profileImage }} style={styles.profileImage} />
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={() => setIsImageModalVisible(true)}
-            >
-              <Edit2 color="#FFFFFF" size={16} />
-            </TouchableOpacity>
           </View>
 
           <View style={styles.nameContainer}>
@@ -332,15 +356,9 @@ const VendorProfileScreen = () => {
             <ChevronRight color="#9E9E9E" size={20} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <User color="#4CAF50" size={20} />
-            <Text style={styles.menuItemText}>Account Settings</Text>
-            <ChevronRight color="#9E9E9E" size={20} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setIsDeleteModalVisible(true)}>
             <Shield color="#4CAF50" size={20} />
-            <Text style={styles.menuItemText}>Privacy & Security</Text>
+            <Text style={styles.menuItemText}>Delete Account</Text>
             <ChevronRight color="#9E9E9E" size={20} />
           </TouchableOpacity>
         </View>
@@ -522,6 +540,46 @@ const VendorProfileScreen = () => {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveButton} onPress={handleImageUpload}>
                   <Text style={styles.saveButtonText}>Upload</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete Profile Modal */}
+        <Modal
+          visible={isDeleteModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsDeleteModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Delete Profile</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                value={username}
+                editable={false}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                secureTextEntry={true}
+                onChangeText={(text) => setDeletePassword(text)}
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setIsDeleteModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={handleDeleteProfile}
+                >
+                  <Text style={styles.saveButtonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -379,21 +379,23 @@ const VendorHomePage = () => {
                   </View>
 
                   {/* Deliver Order Button */}
-                  <TouchableOpacity
-                    style={styles.deliverButton}
-                    onPress={async () => {
-                      try {
-                        await axios.put(`${config.API_IP}/orders/update-status/${order.order_id}?status=Delivered`);
-                        Alert.alert('Success', 'Order status updated to Delivered.');
-                        fetchRecentOrders(); // Refresh orders list
-                      } catch (error) {
-                        console.error('Error updating order status:', error.response?.data || error.message);
-                        Alert.alert('Error', 'Failed to update order status.');
-                      }
-                    }}
-                  >
-                    <Text style={styles.deliverButtonText}>Deliver Order</Text>
-                  </TouchableOpacity>
+                  {order.order_status === 'pending'  && (
+                    <TouchableOpacity
+                      style={styles.deliverButton}
+                      onPress={async () => {
+                        try {
+                          await axios.put(`${config.API_IP}/orders/update-status/${order.order_id}?status=Delivered`);
+                          Alert.alert('Success', 'Order status updated to Delivered.');
+                          fetchRecentOrders(); // Refresh orders list
+                        } catch (error) {
+                          console.error('Error updating order status:', error.response?.data || error.message);
+                          Alert.alert('Error', 'Failed to update order status.');
+                        }
+                      }}
+                    >
+                      <Text style={styles.deliverButtonText}>Deliver Order</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
             </ScrollView>

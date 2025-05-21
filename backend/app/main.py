@@ -14,6 +14,8 @@ from app.models.customer import CustomerProfile
 from app.schemas.customer import CustomerProfileCreate, CustomerProfileOut
 from app.models.wish_list import WishList
 from app.models.product_report import ProductReport
+from app.crud.comments import create_comment, get_comments_by_product
+from app.schemas.comments import CommentCreate, CommentOut
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Query
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -1360,7 +1362,7 @@ KHALTI_INITIATE_URL = 'https://dev.khalti.com/api/v2/epayment/initiate/'
 #             raise HTTPException(status_code=500, detail="Failed to initiate payment.")
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
+from app.utils.config import API_IP
 @app.post("/create_order")
 async def create_order(
     product_id: int = Query(..., description="ID of the product to order"),
@@ -1390,11 +1392,11 @@ async def create_order(
     db.commit()
     db.refresh(order)
 
-    return_url = f"http://127.0.0.1:8000/payment_callback/{order.id}"
+    return_url = f"{API_IP}/payment_callback/{order.id}"
 
     payload = {
         "return_url": return_url,
-        "website_url": "http://127.0.0.1:8000",
+        "website_url": API_IP,
         "amount": total_price * 100,  # Convert to paisa
         "purchase_order_id": str(order.id),
         "purchase_order_name": f"Plant Medicine Purchase: {product.name}",
@@ -1798,3 +1800,41 @@ def get_all_warnings(db: Session = Depends(get_db)):
     if not warnings:
         raise HTTPException(status_code=404, detail="No warnings found")
     return warnings
+
+from app.schemas.review_comment import ReviewCommentCreate, ReviewCommentOut
+from app.crud.review_comment import create_review_comment, get_comments_by_review
+
+
+@app.post("/reviews/{review_id}/comments", response_model=ReviewCommentOut)
+def add_review_comment(review_id: int, comment: ReviewCommentCreate, db: Session = Depends(get_db)):
+    if review_id != comment.review_id:
+        raise HTTPException(status_code=400, detail="Review ID mismatch")
+
+    new_comment = create_review_comment(db, comment.review_id, comment.user_id, comment.content, comment.parent_comment_id)
+    return new_comment
+
+@app.get("/reviews/{review_id}/comments", response_model=List[ReviewCommentOut])
+def get_review_comments(review_id: int, db: Session = Depends(get_db)):
+    comments = get_comments_by_review(db, review_id)
+    return comments
+
+@app.post("/comments", response_model=CommentOut)
+def add_comment(comment: CommentCreate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == comment.user_id).first()
+    product = db.query(Product).filter(Product.id == comment.product_id).first()
+    if not user or not product:
+        raise HTTPException(status_code=404, detail="User or product not found")
+    return create_comment(db, comment)
+
+@app.get("/comments/{product_id}", response_model=list[CommentOut])
+def read_comments(product_id: int, db: Session = Depends(get_db)):
+    return get_comments_by_product(db, product_id)
+
+
+
+@app.get("/get-user-id")
+def get_user_id(username: str = Query(..., description="Username to lookup"), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"user_id": user.id}

@@ -94,7 +94,7 @@ const CustomerLandingPage = () => {
       setProducts(randomProducts);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      //console.error('Error fetching products:', error);
       setLoading(false);
     }
   };
