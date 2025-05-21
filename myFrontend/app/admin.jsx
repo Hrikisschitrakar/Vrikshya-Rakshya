@@ -114,7 +114,7 @@ export default function AdminDashboard() {
         style={[styles.tab, activeTab === 'posts' && styles.activeTab]} 
         onPress={() => setActiveTab('posts')}
       >
-        <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Posts</Text>
+        <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Products</Text>
       </TouchableOpacity>
       <TouchableOpacity 
         style={[styles.tab, activeTab === 'warnings' && styles.activeTab]} 
@@ -332,7 +332,7 @@ export default function AdminDashboard() {
           />
         )}
 
-        {activeTab === 'posts' && (
+        {activeTab === 'products' && (
           <FlatList
             data={filteredPosts}
             keyExtractor={(item) => item.id.toString()}

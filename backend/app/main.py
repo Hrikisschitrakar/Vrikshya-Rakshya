@@ -1485,3 +1485,62 @@ async def update_order_status(order_id: int, status: str, db: Session = Depends(
     return order
 
 
+@app.get("/users/role")
+async def get_users_by_role(db: Session = Depends(get_db)):
+    # Fetch users whose role is either 'customer' or 'vendor'
+    users = db.query(User).filter(User.role.in_(['customer', 'vendor'])).all()
+    
+    if not users:
+        raise HTTPException(status_code=404, detail="No users found with the specified roles")
+    
+    # Returning the list of users
+    return users
+
+@app.delete("/users/{username}", response_model=UserOut)
+async def delete_user_by_username(username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # If you want, delete related dependencies here to avoid FK issues
+
+    db.delete(user)
+    db.commit()
+
+    # Generate token or send empty string if you don't want token on delete
+    token = create_access_token(data={"sub": user.username})
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "token": token,
+    }
+
+
+
+@app.post("/send-warning/{username}")
+async def send_warning_notification(username: str, db: Session = Depends(get_db)):
+    # Find user by username
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Create a warning notification content
+    warning_message = "Warning: Please follow the community guidelines to avoid penalties."
+
+    # Prepare notification object
+    notification = NotificationCreate(
+        user_id=user.id,
+        content=warning_message
+    )
+
+    # Create notification in DB
+    created_notification = create_notification(db, notification)
+
+    if not created_notification:
+        raise HTTPException(status_code=500, detail="Failed to send notification")
+
+    return {"message": f"Warning notification sent to {username}"}
