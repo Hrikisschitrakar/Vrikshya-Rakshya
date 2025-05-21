@@ -1677,4 +1677,23 @@ async def get_all_product_reports(db: Session = Depends(get_db)):
         })
 
     return response
+from app.models.warning import Warning
 
+class WarningOut(BaseModel):
+    id: int
+    user_id: int
+    username: str | None
+    content: str
+    created_at: datetime | None
+
+    class Config:
+        orm_mode = True
+
+
+
+@app.get("/warnings", response_model=List[WarningOut])
+def get_all_warnings(db: Session = Depends(get_db)):
+    warnings = db.query(Warning).all()
+    if not warnings:
+        raise HTTPException(status_code=404, detail="No warnings found")
+    return warnings

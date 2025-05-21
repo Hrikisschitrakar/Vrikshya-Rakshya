@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [warningMessage, setWarningMessage] = useState('');
+  const [productReports, setProductReports] = useState([]); // Initialize productReports state
 
   // Sample data
   const [users, setUsers] = useState([
@@ -45,12 +46,7 @@ export default function AdminDashboard() {
     { id: 4, userId: 1, userName: 'John Doe', title: 'Responsive Design for Mobile', content: 'Building responsive mobile apps requires...', date: '2025-04-18', likes: 33, comments: 11 },
   ]);
 
-  const [warnings, setWarnings] = useState([
-    { id: 1, userId: 3, userName: 'Mike Johnson', message: 'Inappropriate content in posts', date: '2025-04-08', status: 'Pending' },
-    { id: 2, userId: 2, userName: 'Jane Smith', message: 'Multiple reports from other users', date: '2025-04-14', status: 'Sent' },
-  ]);
-
-  const [productReports, setProductReports] = useState([]); // State for product reports
+  const [warnings, setWarnings] = useState([]); // State for warnings
 
   // Fetch users from the server
   useEffect(() => {
@@ -88,6 +84,20 @@ export default function AdminDashboard() {
     };
 
     fetchProductReports();
+  }, []);
+
+  // Fetch warnings from the server
+  useEffect(() => {
+    const fetchWarnings = async () => {
+      try {
+        const response = await axios.get(`${config.API_IP}/warnings`);
+        setWarnings(response.data);
+      } catch (error) {
+        console.error('Error fetching warnings:', error);
+      }
+    };
+
+    fetchWarnings();
   }, []);
 
   // Event handlers
@@ -151,6 +161,12 @@ export default function AdminDashboard() {
     report.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     report.reporter_username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     report.reason.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter warnings based on search query
+  const filteredWarnings = warnings.filter(warning =>
+    warning.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    warning.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleLogout = () => {
@@ -250,16 +266,10 @@ export default function AdminDashboard() {
   const WarningItem = ({ warning }) => (
     <View style={styles.warningItem}>
       <View style={styles.warningHeader}>
-        <Text style={styles.warningUser}>{warning.userName}</Text>
-        <Text style={[
-          styles.warningStatus,
-          warning.status === 'Sent' ? styles.sentStatus : styles.pendingStatus
-        ]}>
-          {warning.status}
-        </Text>
+        <Text style={styles.warningUser}>User: {warning.username}</Text>
+        <Text style={styles.warningDate}>Date: {new Date(warning.created_at).toLocaleDateString()}</Text>
       </View>
-      <Text style={styles.warningMessage}>{warning.message}</Text>
-      <Text style={styles.warningDate}>{warning.date}</Text>
+      <Text style={styles.warningMessage}>{warning.content}</Text>
     </View>
   );
 
@@ -420,7 +430,7 @@ export default function AdminDashboard() {
 
         {activeTab === 'warnings' && (
           <FlatList
-            data={warnings}
+            data={filteredWarnings}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => <WarningItem warning={item} />}
             contentContainerStyle={styles.listContainer}
@@ -645,28 +655,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#212121',
   },
-  warningStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+  warningDate: {
+    color: '#757575',
     fontSize: 12,
-  },
-  sentStatus: {
-    backgroundColor: '#c8e6c9', // Very light green
-    color: '#2e7d32', // Dark green
-  },
-  pendingStatus: {
-    backgroundColor: '#fff9c4',
-    color: '#f57f17',
+    marginBottom: 4,
   },
   warningMessage: {
     color: '#424242',
     fontSize: 14,
     marginBottom: 8,
-  },
-  warningDate: {
-    color: '#757575',
-    fontSize: 12,
   },
   reportItem: {
     backgroundColor: 'white',
