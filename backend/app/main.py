@@ -1,4 +1,3 @@
-
 import shutil
 from app.schemas.warning import WarningCreate
 from app.crud.warning import create_warning
@@ -240,8 +239,6 @@ async def verify_email(verification_token: str, db: Session = Depends(get_db)):
     
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
-
-
 
 @app.delete("/users", response_model=UserOut)
 async def delete_user_endpoint(user: UserDelete, db: Session = Depends(get_db)):
@@ -579,6 +576,9 @@ async def get_average_rating(product_id: int, db: Session = Depends(get_db)):
     
     # Calculate the average rating
     average_rating = sum([review.rating for review in reviews]) / len(reviews)
+    
+    # Print the average rating to the console
+    print(f"Average rating for product {product_id}: {average_rating}")
     
     return average_rating
 

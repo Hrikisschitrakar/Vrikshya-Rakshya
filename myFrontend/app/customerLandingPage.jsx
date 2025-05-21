@@ -43,6 +43,28 @@ const CustomerLandingPage = () => {
     })();
   }, []);
 
+  const fetchAverageRating = async (productId) => {
+    try {
+      const response = await axios.get(`${config.API_IP}/reviews/average/${productId}`);
+      const averageRating = response.data;
+
+      // Validate and return the average rating
+      const validRating = averageRating !== null && !isNaN(Number(averageRating))
+        ? Number(averageRating)
+        : 'No reviews'; // Return "No reviews" if invalid
+
+      console.log(`Average rating for product ${productId}:`, validRating); // Log the average rating
+      return validRating;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        console.warn(`No reviews found for product ${productId}.`);
+        return 'No reviews'; // Return "No reviews" for 404 errors
+      }
+      console.error(`Error fetching average rating for product ${productId}:`, error);
+      return 'No reviews'; // Default to "No reviews" for other errors
+    }
+  };
+
   const fetchProducts = async (query) => {
     try {
       // Encode the query and replace '+' with '%20'
@@ -50,16 +72,22 @@ const CustomerLandingPage = () => {
       const response = await axios.get(`${config.API_IP}/products_by_name/{search}`, {
         params: { search_term: encodedQuery },
       });
-      const productsData = response.data.map(product => ({
-        id: product.id.toString(),
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        vendorLocation: product.vendor_address,
-        image: `${config.API_IP}${product.image_url}`,
-        vendor: product.vendor_name,
-        stock: product.stock, // Include stock information
-      }));
+      const productsData = await Promise.all(
+        response.data.map(async (product) => {
+          const averageRating = await fetchAverageRating(product.id); // Fetch average rating
+          return {
+            id: product.id.toString(),
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            vendorLocation: product.vendor_address,
+            image: `${config.API_IP}${product.image_url}`,
+            vendor: product.vendor_name,
+            stock: product.stock,
+            averageRating, // Include average rating
+          };
+        })
+      );
 
       // Select 5 random products
       const randomProducts = productsData.sort(() => 0.5 - Math.random()).slice(0, 5);
@@ -164,7 +192,7 @@ const CustomerLandingPage = () => {
   const renderProductItem = ({ item }) => (
     <TouchableOpacity 
       style={styles.productCard}
-      onPress={() => navigation.navigate('ProductDetail', { productData: item, username })} // Pass entire product data, including stock
+      onPress={() => navigation.navigate('ProductDetail', { productData: item, username })}
     >
       <Image
         source={{ uri: item.image }}
@@ -177,8 +205,16 @@ const CustomerLandingPage = () => {
         <Text style={styles.productVendor} numberOfLines={2}>
           {item.description}
         </Text>
-        <Text style={styles.productVendor}>stock: {item.stock}</Text>
+        <Text style={styles.productVendor}>Stock: {item.stock}</Text>
         <Text style={styles.productVendor}>Location: {item.vendorLocation}</Text> {/* Added location */}
+
+        {/* Display average rating */}
+        <View style={styles.ratingContainer}>
+          <FontAwesome name="star" size={16} color="#FFD700" />
+          <Text style={styles.ratingText}>
+            {typeof item.averageRating === 'number' ? `${item.averageRating.toFixed(1)} / 5` : item.averageRating}
+          </Text>
+        </View>
 
         <View style={styles.productPriceRow}>
           <TouchableOpacity 
@@ -727,6 +763,16 @@ const styles = StyleSheet.create({
   activeNavText: {
     color: '#2e6b41',
     fontWeight: '600',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  ratingText: {
+    marginLeft: 4,
+    fontSize: 14,
+    color: '#333',
   },
 });
 

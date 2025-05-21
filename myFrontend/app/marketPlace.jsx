@@ -26,23 +26,47 @@ const Marketplace = () => {
   const [noResults, setNoResults] = useState(false);
   const router = useRouter();
   const route = useRoute();
+  const fetchAverageRating = async (productId) => {
+    try {
+      const response = await fetch(`${config.API_IP}/reviews/average/${productId}`);
+      if (response.ok) {
+        const averageRating = await response.json();
+        return averageRating !== null && !isNaN(Number(averageRating))
+          ? Number(averageRating)
+          : 'No reviews';
+      }
+      return 'No reviews';
+    } catch (error) {
+      console.error(`Error fetching average rating for product ${productId}:`, error);
+      return 'No reviews';
+    }
+  };
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         const response = await fetch(`${config.API_IP}/products/`);
         const data = await response.json();
-        const productsData = Array.isArray(data) ? data.map(product => ({
-          id: product.id.toString(),
-          name: product.name,
-          vendor: product.vendor_name,
-          vendorLocation: product.vendor_address,
-          price: product.price,
-          stock: product.stock,
-          image: `${config.API_IP}${product.image_url}`,
-          details: product.description,
-          availability: product.stock > 0 ? 'In Stock' : 'Out of Stock',
-        })) : [];
+        const productsData = Array.isArray(data)
+          ? await Promise.all(
+              data.map(async (product) => {
+                const averageRating = await fetchAverageRating(product.id); // Fetch average rating
+                return {
+                  id: product.id.toString(),
+                  name: product.name,
+                  vendor: product.vendor_name,
+                  vendorLocation: product.vendor_address,
+                  price: product.price,
+                  stock: product.stock,
+                  image: `${config.API_IP}${product.image_url}`,
+                  details: product.description,
+                  availability: product.stock > 0 ? 'In Stock' : 'Out of Stock',
+                  rating: averageRating, // Include average rating
+                };
+              })
+            )
+          : [];
         setProducts(productsData);
         setFilteredProducts(productsData);
         setNoResults(productsData.length === 0);
@@ -137,6 +161,15 @@ const Marketplace = () => {
         <Text style={styles.vendorName}>{item.vendor}</Text>
         <Text style={styles.locationText}>{item.vendorLocation}</Text>
         <Text style={styles.detailsText} numberOfLines={2}>{item.details}</Text>
+        
+        {/* Display average rating */}
+        <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={16} color="#FFD700" />
+          <Text style={styles.ratingText}>
+            {typeof item.rating === 'number' ? `${item.rating.toFixed(1)} / 5` : item.rating}
+          </Text>
+        </View>
+
         <View style={styles.bottomRow}>
           <Text style={styles.priceText}>Rs.{item.price.toFixed(2)}</Text>
         </View>
@@ -372,7 +405,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sortButtonActive: {
-    backgroundColor: '#2e6e41',
+    backgroundColor: '#2e6b41',
   },
   sortButtonText: {
     color: '#333',
@@ -464,6 +497,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#333',
     marginBottom: 8,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  ratingText: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: '#333',
   },
   bottomRow: {
     flexDirection: 'row',
