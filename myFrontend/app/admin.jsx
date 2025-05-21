@@ -50,6 +50,8 @@ export default function AdminDashboard() {
     { id: 2, userId: 2, userName: 'Jane Smith', message: 'Multiple reports from other users', date: '2025-04-14', status: 'Sent' },
   ]);
 
+  const [productReports, setProductReports] = useState([]); // State for product reports
+
   // Fetch users from the server
   useEffect(() => {
     const fetchUsers = async () => {
@@ -72,6 +74,20 @@ export default function AdminDashboard() {
     };
 
     fetchUsers();
+  }, []);
+
+  // Fetch product reports from the server
+  useEffect(() => {
+    const fetchProductReports = async () => {
+      try {
+        const response = await axios.get(`${config.API_IP}/product-reports`);
+        setProductReports(response.data);
+      } catch (error) {
+        console.error('Error fetching product reports:', error);
+      }
+    };
+
+    fetchProductReports();
   }, []);
 
   // Event handlers
@@ -130,6 +146,13 @@ export default function AdminDashboard() {
     post.userName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Filter product reports based on search query
+  const filteredProductReports = productReports.filter(report =>
+    report.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    report.reporter_username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    report.reason.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleLogout = () => {
     navigation.reset({
       index: 0,
@@ -150,7 +173,7 @@ export default function AdminDashboard() {
         style={[styles.tab, activeTab === 'posts' && styles.activeTab]} 
         onPress={() => setActiveTab('posts')}
       >
-        <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Products</Text>
+        <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>Product&apos;s Report</Text>
       </TouchableOpacity>
       <TouchableOpacity 
         style={[styles.tab, activeTab === 'warnings' && styles.activeTab]} 
@@ -237,6 +260,23 @@ export default function AdminDashboard() {
       </View>
       <Text style={styles.warningMessage}>{warning.message}</Text>
       <Text style={styles.warningDate}>{warning.date}</Text>
+    </View>
+  );
+
+  // Product Report Item Component
+  const ProductReportItem = ({ report }) => (
+    <View style={styles.reportItem}>
+      <Text style={styles.reportTitle}>Product: {report.product_name}</Text>
+      <Text style={styles.reportMeta}>Reported by: {report.reporter_username}</Text>
+      <Text style={styles.reportReason}>Reason: {report.reason}</Text>
+      <Text style={styles.reportDate}>Reported on: {new Date(report.created_at).toLocaleDateString()}</Text>
+      <View style={styles.productDetails}>
+        <Text style={styles.productDetail}>Description: {report.product_description}</Text>
+        <Text style={styles.productDetail}>Price: ${report.product_price.toFixed(2)}</Text>
+        <Text style={styles.productDetail}>Stock: {report.product_stock}</Text>
+        <Text style={styles.productDetail}>Vendor: {report.vendor_name}</Text>
+        <Text style={styles.productDetail}>Vendor Username: {report.vendor_username}</Text>
+      </View>
     </View>
   );
 
@@ -369,11 +409,11 @@ export default function AdminDashboard() {
           />
         )}
 
-        {activeTab === 'products' && (
+        {activeTab === 'posts' && (
           <FlatList
-            data={filteredPosts}
+            data={filteredProductReports}
             keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => <PostItem post={item} />}
+            renderItem={({ item }) => <ProductReportItem report={item} />}
             contentContainerStyle={styles.listContainer}
           />
         )}
@@ -627,6 +667,44 @@ const styles = StyleSheet.create({
   warningDate: {
     color: '#757575',
     fontSize: 12,
+  },
+  reportItem: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 8,
+    elevation: 1,
+  },
+  reportTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#212121',
+    marginBottom: 4,
+  },
+  reportMeta: {
+    color: '#757575',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  reportReason: {
+    color: '#d32f2f',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  reportDate: {
+    color: '#757575',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  productDetails: {
+    paddingLeft: 16,
+    borderLeftWidth: 1,
+    borderLeftColor: '#e0e0e0',
+  },
+  productDetail: {
+    color: '#424242',
+    fontSize: 14,
+    marginBottom: 4,
   },
   modalOverlay: {
     flex: 1,

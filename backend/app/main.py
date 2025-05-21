@@ -13,6 +13,7 @@ from app.schemas.wish_list import WishListOut
 from app.models.customer import CustomerProfile
 from app.schemas.customer import CustomerProfileCreate, CustomerProfileOut
 from app.models.wish_list import WishList
+from app.models.product_report import ProductReport
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect, Query
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -1621,3 +1622,59 @@ async def send_warning_notification(username: str, db: Session = Depends(get_db)
     # send email & create notification logic here ...
 
     return {"message": f"Warning notification sent to {username} via notification and email."}
+
+
+from app.schemas.product_report import ProductReportCreate, ProductReportOut
+from app.crud.product_report import create_product_report
+
+@app.post("/report-product", status_code=201)
+async def report_product_endpoint(report: ProductReportCreate, db: Session = Depends(get_db)):
+    # Optional: Validate product existence
+    product = db.query(Product).filter(Product.id == report.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Optional: Validate reporter user existence
+    user = db.query(User).filter(User.username == report.reporter_username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Reporter user not found")
+
+    db_report = create_product_report(db, report)
+    if not db_report:
+        raise HTTPException(status_code=500, detail="Failed to report product")
+
+    return {"message": "Product reported successfully", "report_id": db_report.id}
+
+from app.models.user import User  # Import your User model if not imported
+
+@app.get("/product-reports", response_model=List[dict])
+async def get_all_product_reports(db: Session = Depends(get_db)):
+    reports = db.query(ProductReport).all()
+    if not reports:
+        raise HTTPException(status_code=404, detail="No product reports found")
+
+    response = []
+    for report in reports:
+        product = db.query(Product).filter(Product.id == report.product_id).first()
+        if not product:
+            continue
+        
+        # Fetch vendor user by vendor_id
+        vendor_user = db.query(User).filter(User.id == product.vendor_id).first()
+
+        response.append({
+            "id": report.id,
+            "product_id": report.product_id,
+            "reporter_username": report.reporter_username,
+            "reason": report.reason,
+            "created_at": report.created_at,
+            "vendor_name": getattr(product, "vendor_name", None),  # product vendor_name if exists
+            "product_name": product.name,
+            "product_description": product.description,
+            "product_price": product.price,
+            "product_stock": product.stock,
+            "vendor_username": vendor_user.username if vendor_user else None,  # username from users table
+        })
+
+    return response
+

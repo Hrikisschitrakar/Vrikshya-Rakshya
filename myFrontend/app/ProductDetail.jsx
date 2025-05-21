@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
-import { Package, MapPin, ShoppingCart } from 'lucide-react-native';
+import { Package, MapPin, ShoppingCart, MoreVertical } from 'lucide-react-native';
 import { useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import config from '../config';
@@ -122,6 +122,46 @@ const ProductDetail = () => {
     }
   };
 
+  const handleReportProduct = () => {
+    Alert.alert(
+      'Report Product',
+      'Are you sure you want to report this product?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Report',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${config.API_IP}/report-product`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  product_id: product.id,
+                  reporter_username: username, // Use reporter_username instead of user_id
+                  reason: 'Inappropriate content', // Example reason
+                }),
+              });
+
+              if (response.ok) {
+                Alert.alert('Success', 'The product has been reported.');
+              } else {
+                const errorData = await response.json();
+                console.error('Error reporting product:', errorData);
+                Alert.alert('Error', errorData.detail || 'Failed to report the product. Please try again.');
+              }
+            } catch (error) {
+              console.error('Error reporting product:', error);
+              Alert.alert('Error', 'Something went wrong. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (paymentUrl) {
     return (
       <WebView
@@ -157,6 +197,11 @@ const ProductDetail = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleReportProduct} style={styles.reportButton}>
+          <MoreVertical size={24} color="#424242" />
+        </TouchableOpacity>
+      </View>
       <ScrollView>
         <View style={styles.imageContainer}>
           <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
@@ -319,6 +364,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 16,
+    backgroundColor: '#F5F9F5',
+  },
+  reportButton: {
+    padding: -5,
   },
 });
 
