@@ -123,19 +123,22 @@ export default function AdminDashboard() {
     setShowModal(false);
   };
 
-  const handleSendWarning = () => {
-    if (selectedItem && warningMessage) {
-      const newWarning = {
-        id: warnings.length + 1,
-        userId: selectedItem.id,
-        userName: selectedItem.name,
-        message: warningMessage,
-        date: new Date().toISOString().split('T')[0],
-        status: 'Sent'
-      };
-      setWarnings([...warnings, newWarning]);
-      setWarningMessage('');
-      setShowModal(false);
+  const handleSendWarning = async () => {
+    if (selectedItem) {
+      try {
+        await axios.post(`${config.API_IP}/send-warning/${selectedItem.username}`);
+        setWarnings([...warnings, {
+          id: warnings.length + 1,
+          userId: selectedItem.id,
+          userName: selectedItem.name,
+          message: "Warning sent successfully.",
+          date: new Date().toISOString().split('T')[0],
+          status: 'Sent'
+        }]);
+        setShowModal(false);
+      } catch (error) {
+        console.error('Error sending warning:', error);
+      }
     }
   };
 
@@ -146,27 +149,27 @@ export default function AdminDashboard() {
   };
 
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
+    (user.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
+    (user.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (user.username?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   const filteredPosts = posts.filter(post => 
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    post.userName.toLowerCase().includes(searchQuery.toLowerCase())
+    (post.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
+    (post.userName?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   // Filter product reports based on search query
   const filteredProductReports = productReports.filter(report =>
-    report.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    report.reporter_username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    report.reason.toLowerCase().includes(searchQuery.toLowerCase())
+    (report.product_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (report.reporter_username?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (report.reason?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   // Filter warnings based on search query
   const filteredWarnings = warnings.filter(warning =>
-    warning.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    warning.content.toLowerCase().includes(searchQuery.toLowerCase())
+    (warning.username?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (warning.content?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   const handleLogout = () => {
@@ -356,21 +359,10 @@ export default function AdminDashboard() {
               <Text style={styles.modalText}>
                 Send a warning message to user &quot;{selectedItem?.name}&quot;.
               </Text>
-              <TextInput
-                style={styles.warningInput}
-                placeholder="Enter warning message..."
-                multiline={true}
-                numberOfLines={4}
-                value={warningMessage}
-                onChangeText={setWarningMessage}
-              />
               <View style={styles.modalActions}>
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.cancelButton]} 
-                  onPress={() => {
-                    setWarningMessage('');
-                    setShowModal(false);
-                  }}
+                  onPress={() => setShowModal(false)}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -413,7 +405,7 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <FlatList
             data={filteredUsers}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => `user-${item.id}`} // Ensure unique keys for users
             renderItem={({ item }) => <UserItem user={item} />}
             contentContainerStyle={styles.listContainer}
           />
@@ -422,7 +414,7 @@ export default function AdminDashboard() {
         {activeTab === 'posts' && (
           <FlatList
             data={filteredProductReports}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => `report-${item.id}`} // Ensure unique keys for product reports
             renderItem={({ item }) => <ProductReportItem report={item} />}
             contentContainerStyle={styles.listContainer}
           />
@@ -431,7 +423,7 @@ export default function AdminDashboard() {
         {activeTab === 'warnings' && (
           <FlatList
             data={filteredWarnings}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => `warning-${item.id}`} // Ensure unique keys for warnings
             renderItem={({ item }) => <WarningItem warning={item} />}
             contentContainerStyle={styles.listContainer}
           />
