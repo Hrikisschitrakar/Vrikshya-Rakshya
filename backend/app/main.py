@@ -202,7 +202,7 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     verification_token = create_verification_token(data={"sub": db_user.email})
     verification_link = f"http://localhost:8000/verify/{verification_token}"
     email_subject = "Please verify your email"
-    email_body = f"Click the link to verify your email: {verification_link}"
+    email_body = f"Dear User, \nWe welcome you very happily to our application, Vrikshya Rakshya. You are just one step awy from becoming a part of our family. \nClick the link to verify your email: {verification_link}"
     
     email_sent = await send_email(to_email=db_user.email, subject=email_subject, body=email_body)
     if not email_sent:
@@ -1605,7 +1605,8 @@ async def send_warning_notification(username: str, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="User not found")
 
     warning_message_html = """
-    <p>Your account has been reported for posting suspicious content by our fellow users.<br/>
+    <p>Dear user,</p>
+    <p>Your account has been reported for suspicious activities by our fellow users.<br/>
     Warning: Please follow the community guidelines to avoid penalties.<br/>
     For more information, please contact us via email.</p>
 
@@ -1838,3 +1839,11 @@ def get_user_id(username: str = Query(..., description="Username to lookup"), db
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"user_id": user.id}
+
+
+@app.get("/get-username")
+def get_username(user_id: int = Query(..., description="ID of the user"), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"username": user.username}

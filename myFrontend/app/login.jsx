@@ -446,18 +446,21 @@ const styles = StyleSheet.create({
   logo: {
     width: wp(12),
     height: hp(12),
-    marginTop: -hp(6),
+    marginTop: -hp(13),
   },
   welcomeText: {
     fontSize: hp(4),
     fontWeight: "700",
     color: "#397454",
+    marginTop: -hp(1),
+    paddingBottom: wp(10), // Adjusted padding to make the tail of 'y' visible
   },
   welcomeText_one: {
     fontSize: hp(2.5),
     fontWeight: "600",
     color: "#397454",
     marginBottom: 4,
+    marginTop: -hp(10), // Adjusted to lift the text higher
   },
   form: {
     gap: hp(3),
@@ -465,7 +468,7 @@ const styles = StyleSheet.create({
   loginPromptText: {
     fontSize: hp(2.2),
     color: "#397454",
-    marginBottom: hp(1),
+    marginBottom: -hp(1),
   },
   inputWrapper: {
     flexDirection: "row",

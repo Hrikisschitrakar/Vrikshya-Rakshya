@@ -276,7 +276,7 @@ const CustomerProfileScreen = () => {
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Order cancelled successfully.');
+        Alert.alert('Success', 'Order cancelled successfully. \nYou will be refunded within 3-5 business days.');
         fetchOrderHistory(); // Refresh order history
       } else {
         console.error('Failed to cancel order');
@@ -640,7 +640,7 @@ const CustomerProfileScreen = () => {
                       <Text style={styles.wishlistItemDescription}>Quantity: {order.quantity}</Text>
                       <Text style={styles.wishlistItemPrice}>₹{order.total_price}</Text>
                       <Text style={styles.wishlistItemStock}>
-                        {order.order_status === 'delivered' ? 'Delivered' : 'pending'}
+                        {order.order_status}
                       </Text>
                       {order.order_status === 'pending' && (
                         <TouchableOpacity

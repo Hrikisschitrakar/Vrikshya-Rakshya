@@ -78,6 +78,30 @@ const ProductDetail = () => {
     fetchComments();
   }, [username, product.id]);
 
+  useEffect(() => {
+    const fetchUsername = async () => {
+      if (!userId) return;
+
+      try {
+        const response = await fetch(`${config.API_IP}/get-username?user_id=${encodeURIComponent(userId)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.user_id === userId ? { ...comment, username: data.username } : comment
+            )
+          );
+        } else {
+          console.error('Failed to fetch username:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching username:', error);
+      }
+    };
+
+    fetchUsername();
+  }, [userId]);
+
   const handleIncrease = () => {
     if (quantity < product.stock) setQuantity(quantity + 1);
   };
