@@ -336,8 +336,8 @@ const Login = () => {
         Alert.alert("Login Failed", "Invalid credentials. Please try again.");
       }
     } catch (error) {
-      console.error("Login Error:", error);
-      Alert.alert("Login Failed", "Something went wrong. Please try again.");
+      //console.error("Login Error:", error);
+      Alert.alert("Login Failed", "Please use the correct credentials");
     } finally {
       setLoading(false);
     }

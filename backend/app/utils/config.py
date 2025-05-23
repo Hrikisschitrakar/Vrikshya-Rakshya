@@ -1,1 +1,1 @@
-API_IP = "https://fdac-2405-acc0-1306-17f8-1945-868-7aeb-7056.ngrok-free.app"  # Replace with your actual API IP
+API_IP = "https://4276-120-89-104-30.ngrok-free.app"  # Replace with your actual API IP
